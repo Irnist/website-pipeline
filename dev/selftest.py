@@ -125,6 +125,7 @@ BROWSER_MARKUP = """
 <img src="assets/img/selftest-broken.webp" alt="Broken on purpose" width="200" height="100">
 <button type="button" class="selftest-nameless"></button>
 <p id="selftest-shape-text" style="font-size: 20px">Selftest text under a scene shape</p>
+<h2 style="opacity: 0">Selftest heading a jump never shows</h2>
 <script>window.__motionShapes = () => { const r = document.getElementById('selftest-shape-text').getBoundingClientRect();
   return [{ name: 'selftest-planted', x: r.left, y: r.top, w: r.width, h: r.height, formed: true }]; };</script>
 <script>throw new Error('selftest planted error');</script>
@@ -145,9 +146,10 @@ BROWSER_EXPECT = [
     (r"button-name", "axe: buttons have names"),
     (r"uncaught JavaScript error.*selftest planted error", "page JS errors (L-048)"),
     (r'scene shape "selftest-planted" lies over text: at 1280×720.*at 390×844', "scene shape over text, every window size (L-079)"),
+    (r'heading "Selftest heading a jump never shows" still hidden 2\.5s after one jump', "headings show after a jump to them (L-081)"),
 ]
 CLEAN_BROWSER_EXPECT = [
-    (r"\*\*0 errors", "clean page has 0 errors"),
+    (r"\*\*0 errors", "clean page has 0 errors (its headings show after a first-visit jump, L-081)"),
     (r"^(?![\s\S]*scene shape)(?![\s\S]*no shape was ever reported formed)",
      "scene sweep skips text on an opaque card and shapes still forming (L-079)"),
 ]

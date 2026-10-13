@@ -29,6 +29,14 @@ Entry format:
 
 Entries L-003 to L-016 were mined on 2026-10-07 from the impeccable critiques of IronCity (2026-10-06, 28/40) and Weknz (2026-10-06, 23/36). New checks were proven against planted defects, a clean template build, and copies of both shipped sites.
 
+### L-081 · 2026-10-13 · Music shop sample · motion
+- Mistake: on a first visit, a jump straight down the page (an anchor link, a restored scroll, one flick of the wheel) left headings masked for good: the count-in heading on the homepage, "From a counter to the Room" on About. They only showed after scrolling them off-screen and back.
+- Caught by: self (while building the L-079 sweep, whose own jump-scroll hid a reveal), then browser-qa once the check existed
+- Root cause: the line reveals (`inView()`) are checked only on ScrollTrigger updates, and while the intro curtain runs (~1s of a first visit) the check returns early so text under the curtain waits. A jump in that second fired its only update during the intro, and nothing checked again when the curtain lifted.
+- Prevention: a reveal must settle for wherever the page is, not wait for the next scroll update. Anything that holds reveals back (an intro, a loader) re-runs every trigger's check when it lets go (music shop sample: `inViewCheck` on each trigger, called as the curtain lifts).
+- Enforced by: check (`browser_qa.mjs` jumpChecks: on GSAP pages at 390 and 1440, a first-visit load with storage cleared jumps once to each heading below the fold and errors if it isn't showing 2.5s later; planted in `selftest.py --browser`, and the clean music shop sample About page passes)
+- Seen: Music shop sample
+
 ### L-080 · 2026-10-13 · Portfolio Site (pipeline shared tools) · tooling
 - Mistake: when the sites switched to stubs for the shared tools (L-052), the portfolio's own `tools/deploy_live.py` still did `from deploy import ...`. `tools/deploy.py` was now a stub that runs the shared deploy as `__main__`, so the next live deploy would have shipped a noindex preview Worker first and then crashed on the missing names.
 - Caught by: self, reading `deploy_live.py` before the user-approved live redeploy; nothing ran.
@@ -43,7 +51,7 @@ Entries L-003 to L-016 were mined on 2026-10-07 from the impeccable critiques of
 - Root cause: the fixed stage's instrument was placed by viewport fractions (x -.16w, y .21h, size by min(w, 1.6h)), while the text and metronome next to it follow the layout (container width, grid centring, the pin's 'center center'). The two scale differently, so a placement checked at one window size drifts at another.
 - Prevention: anchor a fixed-scene object that sits close to page content to that content's measured position (as the hero guitar is anchored to its box). Check every placement at several desktop sizes (1280×720, 1440×900, 1920×1080, and the user's own window when known) as well as 390.
 - Enforced by: rule (CLAUDE.md › Accessibility & performance › GSAP `advanced`) + `design-library/patterns.md` › Advanced motion system + check since 2026-10-13 (`browser_qa.mjs` scene sweep via `window.__motionShapes`/`.stops()` at 1280×720, 1440×900, 1731×860, 1920×1080 and 390×844; proven by `selftest.py --browser`, and on music shop sample it found the snare on the count-in heading at all four desktop sizes)
-- Seen: Music shop sample
+- Seen: Music shop sample, Music shop sample again (2026-10-13, found by the new sweep: 7 instruments over text across the 5 sizes, the phones worst; fixed by placing each instrument at runtime in clear space measured from the layout at the scroll where it forms, and forming the snare as the count-in pins)
 
 ### L-078 · 2026-10-13 · Music shop sample · motion
 - Mistake: on desktop the count-in heading and lede vanished partway through the section's 1,500px pin (visible in the user's screenshot; they didn't mention it).

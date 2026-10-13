@@ -9,6 +9,7 @@
 // Pages that load GSAP get a second pass at 390/1440 with motion on (motionChecks): tweened properties,
 // clashes with .reveal/data-parallax, a hidden hero at load, overflow while scrolling, content left invisible.
 // A page whose scene defines window.__motionShapes is also swept at five window sizes for a shape over text (L-079).
+// Then a first-visit load jumps straight to each heading: every one must show where the jump lands (L-081).
 // Contrast: CSS colours for text on plain surfaces; on-screen pixels for SVG graphics and text on photos.
 // Accessibility: axe-core (tools/vendor/axe.min.js, WCAG 2.2 A/AA rules; its colour-contrast rule is off
 // because the contrast checks here are calibrated for photos). Then Lighthouse mobile (tools/lighthouse.mjs),
@@ -693,6 +694,61 @@ async function motionChecks() {
   return { errors, warnings };
 }
 
+// ------------------------------------------------------------------ jumps to a section (L-081)
+// Run straight after a first-visit load (session storage cleared, so an intro curtain plays): jump with one
+// scrollTo to each heading below the first screen, as an anchor link, a restored scroll or a fast flick does,
+// and require it to show within 2.5s. the music shop sample's count-in heading stayed masked for good: its reveal was checked
+// only on scroll updates, and the jump's update came while the intro still held every reveal back.
+// Serialised into the page; must be self-contained.
+async function jumpChecks() {
+  const errors = [];
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  // shown: opacity (with its ancestors') at least .5, and at least half the height of its text lines inside every
+  // clipping ancestor (a line still waiting below its reveal mask shows nothing)
+  const shown = el => {
+    if (!el.getClientRects().length) return false;
+    let opacity = 1;
+    for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+      const cs = getComputedStyle(n);
+      opacity *= +cs.opacity;
+      if (cs.visibility === 'hidden') return false;
+    }
+    if (opacity < 0.5) return false;
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let full = 0, visible = 0;
+    for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+      if (!t.data.trim()) continue;
+      const range = document.createRange();
+      range.selectNodeContents(t);
+      for (const r of range.getClientRects()) {
+        if (r.width <= 2 || r.height <= 2) continue;
+        full += r.height;
+        let top = r.top, bottom = r.bottom;
+        for (let n = t.parentElement; n && n !== document.body; n = n.parentElement) {
+          const cs = getComputedStyle(n);
+          if (cs.overflowY === 'visible') continue;
+          const c = n.getBoundingClientRect();
+          top = Math.max(top, c.top); bottom = Math.min(bottom, c.bottom);
+        }
+        visible += Math.max(0, bottom - top);
+      }
+    }
+    return full > 0 && visible >= full / 2;
+  };
+  const heads = [...document.querySelectorAll('main h1, main h2')]
+    .filter(h => h.getClientRects().length && h.getBoundingClientRect().top + scrollY > innerHeight).slice(0, 8);
+  for (const h of heads) {
+    const r = h.getBoundingClientRect();
+    window.scrollTo(0, Math.max(0, r.top + scrollY - innerHeight * 0.4));
+    let ok = false;
+    for (let t = 0; t < 2500 && !(ok = shown(h)); t += 100) await sleep(100);
+    if (!ok) errors.push(`heading "${(h.getAttribute('aria-label') || h.textContent).trim().replace(/\s+/g, ' ').slice(0, 40)}" still hidden 2.5s after one jump straight to it (scrollY ${Math.round(scrollY)}): ` +
+      `a reveal must settle for the scroll position it lands on (anchor links, restored scroll, a flick during an intro), not wait for a scroll update (L-081)`);
+  }
+  window.scrollTo(0, 0);
+  return { errors, warnings: [] };
+}
+
 // ------------------------------------------------------------------ scene shapes over text (L-079)
 // Pages whose scene reports its shapes (window.__motionShapes, the template motion.js convention) are swept
 // with motion on at these window sizes. A fixed scene placed by viewport fractions drifts against the layout,
@@ -742,8 +798,9 @@ async function shapeSweep(POINTS, AREA) {
         if ((bg.length === 3 || (bg.length === 4 && bg[3] >= 0.85)) || /url\(/.test(cs.backgroundImage)) { behind = true; break; }
         if (cs.overflowX !== 'visible' || cs.overflowY !== 'visible') {
           // a line still waiting below its reveal mask shows a sliver at most: only half a line or more counts
-          const c = n.getBoundingClientRect();
-          rects = rects.map(r => ({ left: Math.max(r.left, c.left), right: Math.min(r.right, c.right), top: Math.max(r.top, c.top), bottom: Math.min(r.bottom, c.bottom), full: r.full || r.bottom - r.top }))
+          const c = n.getBoundingClientRect(), cx = cs.overflowX !== 'visible', cy = cs.overflowY !== 'visible';
+          rects = rects.map(r => ({ left: cx ? Math.max(r.left, c.left) : r.left, right: cx ? Math.min(r.right, c.right) : r.right,
+            top: cy ? Math.max(r.top, c.top) : r.top, bottom: cy ? Math.min(r.bottom, c.bottom) : r.bottom, full: r.full || r.bottom - r.top }))
             .filter(r => r.right - r.left > 2 && r.bottom - r.top >= r.full / 2);
         }
       }
@@ -911,7 +968,9 @@ async function main() {
                 for (const h of s.hits) {
                   const f = found.get(h.shape) || new Map();
                   const at = f.get(sv.name) || { y: h.y, dim: h.dim, texts: [] };
-                  if (h.y === at.y && at.texts.length < 3) at.texts.push(`${h.el} "${h.text}" (${h.score})`);
+                  // the three frames at one stop usually hit the same line: name each text once
+                  if (h.y === at.y && at.texts.length < 3 && !at.texts.some(t => t.startsWith(`${h.el} "${h.text}" (`)))
+                    at.texts.push(`${h.el} "${h.text}" (${h.score})`);
                   f.set(sv.name, at);
                   found.set(h.shape, f);
                 }
@@ -920,7 +979,17 @@ async function main() {
                 [...f].map(([size, a]) => `at ${size} scrollY ${a.y}${a.dim != null ? ` (drawn at ${a.dim})` : ''}: ${a.texts.join(', ')}`).join('; ') +
                 `: place it clear of that text, anchored to the content's measured position, not viewport fractions (L-079)`);
               results.push({ page, vp: 'scene sweep motion on', errors: [...new Set(errors)], warnings });
+              await send('Emulation.setDeviceMetricsOverride', { width: vp.width, height: vp.height, deviceScaleFactor: 1, mobile: vp.mobile });
             }
+            // First visit, then jump straight to each heading: reveals must settle where a jump lands (L-081)
+            await evaluate(send, 'try { sessionStorage.clear(); localStorage.clear(); } catch (e) {} true');
+            const fresh = waitFor('Page.loadEventFired');
+            takeJsErrors();
+            await send('Page.navigate', { url: pathToFileURL(file).href });
+            await fresh;
+            const j = await evaluate(send, `(${jumpChecks.toString()})()`);
+            j.errors.push(...takeJsErrors());
+            results.push({ page, vp: `${vp.name} jumps motion on`, ...j });
           } finally {
             await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
           }
