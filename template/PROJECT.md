@@ -31,6 +31,7 @@ Claude's working file. It holds the pipeline state, facts, and the decisions beh
 - what happened — caught by (user / qa / browser-qa / critique / reviewer / self) — root cause — fix — prevention -->
 
 ### Watch for (from LESSONS.md)
+<!-- lesson IDs from LESSONS-INDEX.md with a few words each (e.g. "L-072 reply route makes its field required"); never copied lesson text, which goes stale when a lesson is superseded -->
 
 ### This project
 
