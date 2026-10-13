@@ -5,7 +5,7 @@ description: End-to-end client website pipeline (intake → direction → build 
 
 # Website pipeline
 
-You run a client website from raw input to a deployed preview with as little user input as possible. The user's global CLAUDE.md website rules apply to every step. The tools in `tools/` enforce most of them mechanically, so run them instead of re-checking by eye.
+You run a client website from raw input to a deployed preview with as little user input as possible. **First, every run (new, resumed or a single phase): Read `<pipeline>/RULES.md`**, the website rules, unless this session already has. They apply to every step. The tools in `tools/` enforce most of them mechanically, so run them instead of re-checking by eye.
 
 ## Workspace
 
@@ -67,7 +67,7 @@ Ask **only** when one of these is true. This is client mode; in sample mode only
 1. **Identity unknowable.** You can't tell from any input or public source what the business does, where it is, or who it serves. A wrong guess would mean rewriting the site.
 2. **Outward-facing or irreversible.** Production deploys, custom domains, connecting a form to a real inbox, anything that spends money, deleting user files. A noindex preview deploy is pre-authorized when `BRIEF.md` says `Deploy preview: yes`.
 3. **Legal or factual claims** the site would make that only the client can confirm (licensing, pricing, warranties). Default to leaving them out. Ask only if the brief makes them central.
-4. **Conflicting instructions** between the brief, the user's messages and CLAUDE.md, where both readings are plausible.
+4. **Conflicting instructions** between the brief, the user's messages, RULES.md and CLAUDE.md, where both readings are plausible.
 5. **Critical design critique.** An impeccable critique or the finish reviewer reports a P0 (Blocking) or P1 (Major) issue. Follow the critique gate below. This is the only question allowed mid-build.
 
 How to ask:
@@ -82,13 +82,13 @@ Use impeccable's own severity scale (P0 Blocking, P1 Major, P2 Minor, P3 Polish)
 - **P2/P3 (minor): don't fix them; proceed.** Log one line per finding in `PROJECT.md` › Decisions: "skipped: minor (P2/P3), <finding>".
 - **P0/P1 (critical): stop and ask before changing anything.** Use one AskUserQuestion batch with up to 4 questions. Write one question per finding, or group them by class if there are more than 4. Each question says what's wrong and where (page, section, screenshot file). It offers 2–3 concrete fix options, with the recommended one first and marked "(Recommended)", plus "Leave as is". Then apply the user's choice to the whole class sitewide (L-016), rebuild, and log the choice in Decisions.
 - **Re-check:** re-run the same critique once after applying the choices. Any new P0/P1 goes through the gate again; minor findings are skipped as above.
-- **Not part of the gate:** objective rule violations that `qa.py`, `browser_qa.mjs`, LESSONS.md or CLAUDE.md already forbid, such as contrast below 4.5:1, overflow, a repeated photo, a glow that drops the text over it below contrast (glows themselves are allowed), a cropped subject, or a select prefilled with a default. Fix those automatically whatever severity the critique gives them, because they are defects, not design choices. `impeccable detect` flags count as minor unless they hit one of these rules. Note known false positives (L-000) as before.
+- **Not part of the gate:** objective rule violations that `qa.py`, `browser_qa.mjs`, LESSONS.md or RULES.md already forbid, such as contrast below 4.5:1, overflow, a repeated photo, a glow that drops the text over it below contrast (glows themselves are allowed), a cropped subject, or a select prefilled with a default. Fix those automatically whatever severity the critique gives them, because they are defects, not design choices. `impeccable detect` flags count as minor unless they hit one of these rules. Note known false positives (L-000) as before.
 
 ## Phases
 
 ### 1 · Intake
 
-0. Read `<pipeline>/LESSONS.md`. Every lesson in it applies from the first draft. Copy the ones most relevant to this project into `PROJECT.md` › Mistakes › "Watch for".
+0. Read `<pipeline>/LESSONS-INDEX.md` (one line per lesson, generated from LESSONS.md). Every lesson applies from the first draft. Open the full LESSONS.md entry for each one that bears on this project, and list their IDs, each with a few words, in `PROJECT.md` › Mistakes › "Watch for". List IDs, never copied lesson text: copies go stale when a lesson is superseded (Trevor Travis and Gadget Zone kept "no glows" after glows were allowed).
 1. Read `BRIEF.md`, the args, and everything in `client-assets/`. **Open every photo** with Read and catalogue it in `PROJECT.md` › Assets. Record the subject, its quality, any problems (plates, logos, clutter, crop), and the best slot for it (hero/feature/gallery/skip). Third-party brand logos on an image (boards, signage, renders) read as endorsements: mark it "crop before use" or skip (L-028). Note which photos come from the same shoot or show the same view (L-029).
 2. If links were given (existing site, Google Business Profile, Facebook), fetch them and extract facts: services, service area, hours, story, owner, years, real projects. Cite the source next to each fact in `PROJECT.md` › Facts.
    - Save captions, reviews and owner quotes **verbatim** to a sources file (e.g. `client-assets/sources.md`). Copy quotes from it; never retype or paraphrase one from memory (L-007).
@@ -234,9 +234,10 @@ Write `HANDOFF.md`, then give the user a short summary in chat:
    - **New:** add an `L-###` entry.
 2. Enforce each new or upgraded lesson as strongly as it allows:
    - **check:** if it's machine-checkable, add it to the shared `<pipeline>/tools/` (`qa.py` or `browser_qa.mjs`); every site gets it through its stubs. Prove it three ways: it fires on a planted defect (add the defect to `<pipeline>/dev/selftest.py`, then run it: every old check must still fire too), it stays quiet on the clean template, and it stays quiet on real markup (`python <pipeline>/dev/qa_real_site.py "<a finished past site>" <scratch dir> "<CTA label>" <CTA href>`; judge every hit). (L-017)
-   - **rule:** add or sharpen a one-line rule in the matching section of `~/.claude/CLAUDE.md`.
+   - **rule:** add or sharpen a one-line rule in the matching section of `<pipeline>/RULES.md`.
    - **step:** for process mistakes, edit this SKILL.md or `.pipeline/VISUAL-REVIEW.md`.
-3. In the chat summary, say how many mistakes were logged and what became a check, rule or step.
+3. Run `python <pipeline>/dev/lessons_index.py` to regenerate `LESSONS-INDEX.md`, and commit both in the pipeline repo.
+4. In the chat summary, say how many mistakes were logged and what became a check, rule or step.
 
 **Design library (every project).** Record the finished site so future builds can learn from it:
 - Write `<pipeline>/design-library/sites/<slug>.md` in the entry format from the library README. Work from PROJECT.md › Direction and the shipped CSS and pages, not from memory.

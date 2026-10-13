@@ -35,7 +35,7 @@ PRIMARY_CTA = ("Get a quote", "contact.html")
 #   "web3forms:<key>"       Web3Forms (free, any host). The inbox owner gets the key by entering their email at
 #                           web3forms.com; messages go to that inbox. The key is public by design.
 #   "https://formspree.io/f/abcd1234" (or any URL that takes a FormData POST and answers 2xx)
-# A real inbox is the client's call: never wire one up without the user's go-ahead (CLAUDE.md › Ask only).
+# A real inbox is the client's call: never wire one up without the user's go-ahead (RULES.md › Ask only).
 FORM_ENDPOINT = ""
 
 # Online booking page (Calendly, Cal.com, Google appointment schedule). Shown on the contact page as a text

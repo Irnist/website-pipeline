@@ -140,7 +140,7 @@ def h_form_fields(page, arg=None):
 
 def h_booking(page, arg=None):
     """A text link to an online booking page (Calendly, Cal.com, Google appointment schedule) when BOOKING_URL is set.
-    A link, not a button: the primary CTA stays the one solid button (CLAUDE.md › one primary CTA)."""
+    A link, not a button: the primary CTA stays the one solid button (RULES.md › one primary CTA)."""
     url = getattr(C, "BOOKING_URL", "")
     if not url:
         return ""

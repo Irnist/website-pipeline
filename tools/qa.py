@@ -1,4 +1,4 @@
-"""Static QA over the built site: the CLAUDE.md website rules that can be checked from markup/CSS.
+"""Static QA over the built site: the website rules (RULES.md) that can be checked from markup/CSS.
 
     python tools/qa.py      -> qa/report.md + qa/image-allocation.md; exit 1 if any ERROR
 
