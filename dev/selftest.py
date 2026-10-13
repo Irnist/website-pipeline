@@ -72,8 +72,11 @@ CSS = """
 @keyframes selftest-spin { to { transform: rotate(1turn) } }
 .selftest-b { line-height: .9 }
 .selftest-c { overflow-wrap: break-word }
+@media (max-width: 599px) { .selftest-row { grid-template-columns: 1fr 1fr } }
+.selftest-row { display: grid; grid-template-columns: 1fr }
 """
 CSS_EXPECT = [
+    (r"`\.selftest-row` sets grid-template-columns in `@media", "breakpoint override after its base rule (L-063)"),
     (r"CSS motion `transition: transform \.2s", "JS-only motion, stylesheet"),
     (r"CSS motion `@keyframes selftest-spin", "no @keyframes"),
     (r"line-height \.9 on `\.selftest-b`", "headline line-height (L-051)"),
@@ -108,6 +111,8 @@ OTHER_EXPECT = [
     (r"robots\.txt blocks the whole site", "robots.txt"),
     (r"Google Fonts CSS linked", "self-hosted fonts (L-039)"),
     (r"image used 2x", "no repeated photo"),
+    (r"near-duplicate images .*selftest-near-dup\.jpg", "no near-duplicate photo (L-029)"),
+    (r"BRIEF\.md links https://instagram\.com/selftestbrief but the site links", "contact links copied from the brief (L-025)"),
     (r"control character", "mangled escapes (L-027)"),
     (r"hard-coded user path", "relative paths (L-055)"),
     (r"tools/ holds full copies of shared pipeline tools \(deploy\.py\)", "shared tools (L-052)"),
@@ -168,6 +173,18 @@ def plant(site):
                  if not re.search(r"logo|icon|favicon|\.svg$", s, re.I))
     other = next(p for p in pages if p not in ("index.html", "404.html", qa_page))
     edit(dist / other, "</main>", f'<img src="{photo}" alt="Selftest repeat">' + "</main>")
+    # the same photo re-exported smaller under another name (L-029)
+    from PIL import Image
+    with Image.open(dist / photo) as im:
+        im.convert("RGB").resize((max(1, im.width // 3), max(1, im.height // 3))).save(
+            dist / "assets" / "selftest-near-dup.jpg", quality=55)
+    edit(dist / qa_page, "</main>", '<img src="assets/selftest-near-dup.jpg" alt="Selftest near duplicate"></main>')
+    # the brief names one Instagram URL, the site links a retyped one (L-025)
+    brief = site / "BRIEF.md"
+    text = brief.read_text(encoding="utf-8") if brief.exists() else ""
+    brief.write_text(re.sub(r"^Links.*$", "", text, flags=re.M) + "\nLinks: https://instagram.com/selftestbrief\n",
+                     encoding="utf-8")
+    edit(dist / qa_page, "</main>", '<a href="https://www.instagram.com/selftestbreif/">Instagram</a></main>')
     edit(dist / "audio-devices.html" if "audio-devices.html" in pages else dist / other, '<html lang="en">', "<html>")
     edit(dist / "index.html", 'type="application/ld+json">', 'type="application/ld+json">{,')
     title = re.search(r"<title>(.*?)</title>", home, re.S).group(0)
@@ -231,6 +248,19 @@ def main():
     text = report(broken, "report.md")
     failed += check(text, QA_EXPECT + CSS_EXPECT + MOTION_EXPECT + BARE_EXPECT + OTHER_EXPECT, "qa/report.md")
 
+    # The pipeline itself: the lessons index matches LESSONS.md, and every Python tool can print any name (L-018)
+    print("\npipeline:")
+    stale = subprocess.run([sys.executable, str(PIPELINE / "dev" / "lessons_index.py"), "--check"],
+                           capture_output=True, text=True).returncode
+    no_utf8 = [p.relative_to(PIPELINE).as_posix() for p in sorted([*(PIPELINE / "tools").glob("*.py"),
+               *(PIPELINE / "dev").glob("*.py"), *(PIPELINE / "brief-form").glob("*.py")])
+               if "stdout.reconfigure" not in p.read_text(encoding="utf-8", errors="replace")]
+    pipeline = [(not stale, "LESSONS-INDEX.md is current (else: python dev/lessons_index.py)"),
+                (not no_utf8, f"Python tools set UTF-8 stdout (L-018){': missing in ' + ', '.join(no_utf8) if no_utf8 else ''}")]
+    for ok, why in pipeline:
+        failed += not ok
+        print(f"  {'ok  ' if ok else 'MISS'} {why}")
+
     if "--browser" in args:
         edit(clean / "dist" / "about.html", "</main>", CLEAN_SHAPES + "</main>")
         print(f"\nclean copy, browser_qa.mjs about.html: "
@@ -240,7 +270,7 @@ def main():
               f"{run(broken, ['node', 'tools/browser_qa.mjs', 'selftest.html', '--no-lighthouse'])[0]}")
         failed += check(report(broken, "browser-report.md"), BROWSER_EXPECT, "qa/browser-report.md")
 
-    total = 2 + len(QA_EXPECT + CSS_EXPECT + MOTION_EXPECT + BARE_EXPECT + OTHER_EXPECT) + (
+    total = 2 + len(pipeline) + len(QA_EXPECT + CSS_EXPECT + MOTION_EXPECT + BARE_EXPECT + OTHER_EXPECT) + (
         len(CLEAN_BROWSER_EXPECT + BROWSER_EXPECT) if "--browser" in args else 0)
     print(f"\nselftest: {total - failed}/{total} passed" + ("" if "--browser" in args else " (add --browser for the browser checks)"))
     sys.exit(1 if failed else 0)

@@ -3,7 +3,7 @@
 Generated from LESSONS.md by `dev/lessons_index.py`; don't edit by hand. One line per lesson:
 what went wrong and how it's enforced now. Open the full entry in LESSONS.md when one applies.
 
-- **L-079** motion · the homepage stage's particle snare overlapped the count-in metronome in the user's 1731×860 window, although it sat clear at 1440×900. — rule
+- **L-079** motion · the homepage stage's particle snare overlapped the count-in metronome in the user's 1731×860 window, although it sat clear at 1440×900. — check+rule
 - **L-078** motion · on desktop the count-in heading and lede vanished partway through the section's 1,500px pin (visible in the user's screenshot; they didn't mention it… — check
 - **L-077** motion · on the first pass of the scroll-morphing instrument stage (a fixed canvas behind the home page), the keyboard was tipped nearly edge-on and read as a… — rule+log
 - **L-076** motion · at 390px with motion on, the home page's section and count-in ScrollTriggers started 90–170px below where the layout put them (browser-qa error), so… — check
@@ -84,11 +84,10 @@ what went wrong and how it's enforced now. Open the full entry in LESSONS.md whe
 - **L-001** tooling · `browser_qa.mjs` flagged the hidden mobile nav panel as horizontal overflow. — check
 - **L-000** all areas ·  — check+rule
 
-## Not machine-checked (27)
+## Not machine-checked (26)
 
 Enforced only by a rule, step or log: these rely on reading, so they're the likeliest to repeat.
 
-- L-079 (rule): the homepage stage's particle snare overlapped the count-in metronome in the user's 1731×860 window, although it sat clear at 1440×900.
 - L-077 (rule+log): on the first pass of the scroll-morphing instrument stage (a fixed canvas behind the home page), the keyboard was tipped nearly edge-on and read as a…
 - L-074 (step): page alt texts were written for the planned shots before the stock arrived, so several described pictures the site doesn't show.
 - L-067 (log): the staff card (grid column 1) and the next leader (column 2) auto-placed into the same grid row, so the staff member sat level with the second leader instead of betwe…
@@ -116,4 +115,4 @@ Enforced only by a rule, step or log: these rely on reading, so they're the like
 - L-005 (rule+step): the palette ignored the logo.
 - L-004 (rule): dead-end features.
 
-Totals: 53 check, 27 rule, 24 step, 12 log across 80 lessons.
+Totals: 54 check, 27 rule, 24 step, 12 log across 80 lessons.

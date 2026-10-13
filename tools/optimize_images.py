@@ -46,6 +46,7 @@ def optimise(src, dest_dir, in_place=False):
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # client file names crash cp1252 (L-018)
     if len(sys.argv) > 1:
         for d in sys.argv[1:]:
             for f in sorted(Path(d).resolve().glob("*")):

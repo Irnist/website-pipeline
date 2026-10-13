@@ -11,7 +11,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-TEMPLATE = Path(__file__).resolve().parent.parent / "template"
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # L-018
+TEMPLATE =Path(__file__).resolve().parent.parent / "template"
 site, work = Path(sys.argv[1]), Path(sys.argv[2])
 label, href = sys.argv[3], sys.argv[4]
 

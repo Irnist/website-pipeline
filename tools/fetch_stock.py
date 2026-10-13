@@ -37,6 +37,7 @@ def resolve(source, width):
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # photographer names crash cp1252 (L-018)
     args = sys.argv[1:]
     width = 1600
     if "--w" in args:

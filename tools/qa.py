@@ -12,6 +12,7 @@ from collections import defaultdict
 from html.parser import HTMLParser
 from pathlib import Path
 
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # L-018
 # The site to work on, set by its tools/ stub: one shared copy of each tool serves every site (L-052)
 ROOT = Path(os.environ.get("SITE_ROOT") or sys.exit(
     f"run this as `python tools/{Path(__file__).name}` in a site folder (SITE_ROOT is unset)")).resolve()

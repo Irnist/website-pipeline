@@ -34,7 +34,7 @@ Entries L-003 to L-016 were mined on 2026-10-07 from the impeccable critiques of
 - Caught by: user (screenshot)
 - Root cause: the fixed stage's instrument was placed by viewport fractions (x -.16w, y .21h, size by min(w, 1.6h)), while the text and metronome next to it follow the layout (container width, grid centring, the pin's 'center center'). The two scale differently, so a placement checked at one window size drifts at another.
 - Prevention: anchor a fixed-scene object that sits close to page content to that content's measured position (as the hero guitar is anchored to its box). Check every placement at several desktop sizes (1280×720, 1440×900, 1920×1080, and the user's own window when known) as well as 390.
-- Enforced by: rule (CLAUDE.md › Accessibility & performance › GSAP `advanced`) + `design-library/patterns.md` › Advanced motion system
+- Enforced by: rule (CLAUDE.md › Accessibility & performance › GSAP `advanced`) + `design-library/patterns.md` › Advanced motion system + check since 2026-10-13 (`browser_qa.mjs` scene sweep via `window.__motionShapes`/`.stops()` at 1280×720, 1440×900, 1731×860, 1920×1080 and 390×844; proven by `selftest.py --browser`, and on music shop sample it found the snare on the count-in heading at all four desktop sizes)
 - Seen: Music shop sample
 
 ### L-078 · 2026-10-13 · Music shop sample · motion

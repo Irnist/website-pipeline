@@ -129,6 +129,7 @@ Use impeccable's own severity scale (P0 Blocking, P1 Major, P2 Minor, P3 Polish)
      - the hero headline visible at load;
      - Lighthouse mobile ≥90 and LCP <2.5s;
      - text readable over every moving layer. Sweep every scene state at 390 and 1440 with its section's text on screen, and dim the scene on phones where text runs full width.
+     - A scene with shapes near text implements `window.__motionShapes()` and `.stops()` (convention in the template's `motion.js`; the music shop sample's `field.js` is the worked example) before QA. `browser_qa.mjs` then sweeps it at five window sizes and errors on a formed shape over visible text (L-079). The sweep replaces the manual window-size check but not a look at the user's own window when it's known.
      - After any SplitText re-split, refresh every ScrollTrigger (L-076).
 3. Set the tokens and fonts in `assets/css/styles.css`. The template's CSS holds rule-encoded *mechanics* (header, forms, nowrap utilities). Restyle freely, but keep those behaviours.
    - **Self-host web fonts (L-039).** Never link fonts.googleapis.com: its CSS and font files cost two render-blocking round trips (~1.7s of mobile LCP on Macz). Run `python tools/self_host_fonts.py "<css2 URL>" --preload "Body:400"` (preload only the body face, plus the display face if headlines are the LCP) and set `FONTS = (Path(__file__).parent / "partials" / "fonts.html").read_text(encoding="utf-8")` in `site_config.py`. `qa.py` warns on a Google Fonts link.
