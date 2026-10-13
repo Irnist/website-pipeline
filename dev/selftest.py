@@ -118,7 +118,19 @@ BROWSER_MARKUP = """
 <p style="color: #8a8a8a; background: #9a9a9a; padding: 8px">Selftest low-contrast text</p>
 <img src="assets/img/selftest-broken.webp" alt="Broken on purpose" width="200" height="100">
 <button type="button" class="selftest-nameless"></button>
+<p id="selftest-shape-text" style="font-size: 20px">Selftest text under a scene shape</p>
+<script>window.__motionShapes = () => { const r = document.getElementById('selftest-shape-text').getBoundingClientRect();
+  return [{ name: 'selftest-planted', x: r.left, y: r.top, w: r.width, h: r.height, formed: true }]; };</script>
 <script>throw new Error('selftest planted error');</script>
+"""
+# Planted into the clean copy's dist/about.html: scene shapes the sweep must not report (L-079): one over text on
+# an opaque card (a scene behind the page can't show through), one over text while still forming
+CLEAN_SHAPES = """
+<div style="background: #111; padding: 8px"><p id="selftest-card-text">Selftest text on an opaque card</p></div>
+<p id="selftest-forming-text">Selftest text under a shape still forming</p>
+<script>window.__motionShapes = () => [['selftest-card', true], ['selftest-forming', false]].map(([name, formed]) => {
+  const r = document.getElementById(name + '-text').getBoundingClientRect();
+  return { name, x: r.left, y: r.top, w: r.width, h: r.height, formed }; });</script>
 """
 BROWSER_EXPECT = [
     (r"horizontal overflow at", "no sideways scroll"),
@@ -126,6 +138,12 @@ BROWSER_EXPECT = [
     (r"broken image: assets/img/selftest-broken\.webp", "broken images"),
     (r"button-name", "axe: buttons have names"),
     (r"uncaught JavaScript error.*selftest planted error", "page JS errors (L-048)"),
+    (r'scene shape "selftest-planted" lies over text: at 1280×720.*at 390×844', "scene shape over text, every window size (L-079)"),
+]
+CLEAN_BROWSER_EXPECT = [
+    (r"\*\*0 errors", "clean page has 0 errors"),
+    (r"^(?![\s\S]*scene shape)(?![\s\S]*no shape was ever reported formed)",
+     "scene sweep skips text on an opaque card and shapes still forming (L-079)"),
 ]
 
 
@@ -214,16 +232,16 @@ def main():
     failed += check(text, QA_EXPECT + CSS_EXPECT + MOTION_EXPECT + BARE_EXPECT + OTHER_EXPECT, "qa/report.md")
 
     if "--browser" in args:
+        edit(clean / "dist" / "about.html", "</main>", CLEAN_SHAPES + "</main>")
         print(f"\nclean copy, browser_qa.mjs about.html: "
               f"{run(clean, ['node', 'tools/browser_qa.mjs', 'about.html', '--no-lighthouse'])[0]}")
-        failed += check(report(clean, "browser-report.md"), [(r"\*\*0 errors", "clean page has 0 errors")],
-                        "clean qa/browser-report.md")
+        failed += check(report(clean, "browser-report.md"), CLEAN_BROWSER_EXPECT, "clean qa/browser-report.md")
         print(f"\nbroken copy, browser_qa.mjs selftest.html: "
               f"{run(broken, ['node', 'tools/browser_qa.mjs', 'selftest.html', '--no-lighthouse'])[0]}")
         failed += check(report(broken, "browser-report.md"), BROWSER_EXPECT, "qa/browser-report.md")
 
     total = 2 + len(QA_EXPECT + CSS_EXPECT + MOTION_EXPECT + BARE_EXPECT + OTHER_EXPECT) + (
-        1 + len(BROWSER_EXPECT) if "--browser" in args else 0)
+        len(CLEAN_BROWSER_EXPECT + BROWSER_EXPECT) if "--browser" in args else 0)
     print(f"\nselftest: {total - failed}/{total} passed" + ("" if "--browser" in args else " (add --browser for the browser checks)"))
     sys.exit(1 if failed else 0)
 

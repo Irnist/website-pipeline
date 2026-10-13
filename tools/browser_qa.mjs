@@ -8,6 +8,7 @@
 // (parallel Chrome instances collide). Reduced motion is emulated so reveals render (and parallax holds still).
 // Pages that load GSAP get a second pass at 390/1440 with motion on (motionChecks): tweened properties,
 // clashes with .reveal/data-parallax, a hidden hero at load, overflow while scrolling, content left invisible.
+// A page whose scene defines window.__motionShapes is also swept at five window sizes for a shape over text (L-079).
 // Contrast: CSS colours for text on plain surfaces; on-screen pixels for SVG graphics and text on photos.
 // Accessibility: axe-core (tools/vendor/axe.min.js, WCAG 2.2 A/AA rules; its colour-contrast rule is off
 // because the contrast checks here are calibrated for photos). Then Lighthouse mobile (tools/lighthouse.mjs),
@@ -692,6 +693,123 @@ async function motionChecks() {
   return { errors, warnings };
 }
 
+// ------------------------------------------------------------------ scene shapes over text (L-079)
+// Pages whose scene reports its shapes (window.__motionShapes, the template motion.js convention) are swept
+// with motion on at these window sizes. A fixed scene placed by viewport fractions drifts against the layout,
+// so a shape that clears the text at 1440×900 can sit on it at another size (the music shop sample's snare met the metronome
+// only in the user's 1731×860 window). 1280–1920 cover common desktops, 390 the phone layout.
+const SWEEP = [
+  { name: '1280×720', width: 1280, height: 720, mobile: false },
+  { name: '1440×900', width: 1440, height: 900, mobile: false },
+  { name: '1731×860', width: 1731, height: 860, mobile: false },
+  { name: '1920×1080', width: 1920, height: 1080, mobile: false },
+  { name: '390×844', width: 390, height: 844, mobile: true },
+];
+// A shape counts as over text when, in one frame, at least POINTS of its drawn points fall inside the text's line
+// boxes, or (a shape without points) its rect covers at least AREA of the text's line-box area. A particle is a
+// 4–10px mark, so 8 of them inside one line read as a stroke across the letters, while a stray 1–7 at the edge of
+// a line is the drift every scene has. 15% of a line box is about a word's worth of a heading covered.
+const SHAPE_POINTS = 8, SHAPE_AREA = 0.15;
+
+// Serialised into the page; must be self-contained. Scrolls to the scene's stops (or half-screen steps), waits
+// for the scene to settle at each, then judges every formed shape against the visible text it could show through.
+async function shapeSweep(POINTS, AREA) {
+  const hits = [];
+  const frames = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const read = () => { try { return (window.__motionShapes() || []).filter(Boolean); } catch { return []; } };
+  const label = el => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList.length ? '.' + [...el.classList].slice(0, 2).join('.') : ''}`;
+  // Text a scene behind the page could show through: visible, not on an opaque surface (a card, a photo,
+  // the header bar), and clipped by any ancestor that clips (line-reveal masks).
+  const lines = () => {
+    const out = new Map();
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const range = document.createRange();
+    const vw = innerWidth, vh = innerHeight;
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.data.trim()) continue;
+      const el = node.parentElement;
+      if (!el || el.closest('script, style, noscript, canvas, svg, template')) continue;
+      range.selectNodeContents(node);
+      let rects = [...range.getClientRects()].filter(r => r.width > 2 && r.height > 2 && r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw);
+      if (!rects.length) continue;
+      if (getComputedStyle(el).visibility !== 'visible') continue;
+      let opacity = 1, behind = false;
+      for (let n = el; n && n !== document.body; n = n.parentElement) {
+        const cs = getComputedStyle(n);
+        opacity *= +cs.opacity;
+        const bg = (cs.backgroundColor.match(/[\d.]+/g) || []).map(Number);
+        if ((bg.length === 3 || (bg.length === 4 && bg[3] >= 0.85)) || /url\(/.test(cs.backgroundImage)) { behind = true; break; }
+        if (cs.overflowX !== 'visible' || cs.overflowY !== 'visible') {
+          // a line still waiting below its reveal mask shows a sliver at most: only half a line or more counts
+          const c = n.getBoundingClientRect();
+          rects = rects.map(r => ({ left: Math.max(r.left, c.left), right: Math.min(r.right, c.right), top: Math.max(r.top, c.top), bottom: Math.min(r.bottom, c.bottom), full: r.full || r.bottom - r.top }))
+            .filter(r => r.right - r.left > 2 && r.bottom - r.top >= r.full / 2);
+        }
+      }
+      if (behind || opacity < 0.1 || !rects.length) continue;
+      const box = out.get(el) || { el, rects: [], text: '' };
+      box.rects.push(...rects.map(r => ({ left: r.left - 2, right: r.right + 2, top: r.top - 2, bottom: r.bottom + 2 })));
+      box.text += node.data;
+      out.set(el, box);
+    }
+    return [...out.values()];
+  };
+  const judge = (shape, boxes) => {
+    for (const b of boxes) {
+      let score = 0, over = false;
+      if (Array.isArray(shape.points) && shape.points.length) {
+        for (const [x, y] of shape.points) if (b.rects.some(r => x >= r.left && x <= r.right && y >= r.top && y <= r.bottom)) score++;
+        over = score >= POINTS;
+      } else {
+        let area = 0, covered = 0;
+        for (const r of b.rects) {
+          area += (r.right - r.left) * (r.bottom - r.top);
+          const w = Math.min(r.right, shape.x + shape.w) - Math.max(r.left, shape.x), h = Math.min(r.bottom, shape.y + shape.h) - Math.max(r.top, shape.y);
+          if (w > 0 && h > 0) covered += w * h;
+        }
+        score = area ? covered / area : 0;
+        over = score >= AREA;
+      }
+      if (over) hits.push({ shape: shape.name || 'shape', dim: shape.dim, y: Math.round(scrollY), el: label(b.el),
+        text: b.text.trim().replace(/\s+/g, ' ').slice(0, 40), score: Array.isArray(shape.points) ? `${score} points` : `${Math.round(score * 100)}% of its lines` });
+    }
+  };
+  const max = document.documentElement.scrollHeight - innerHeight;
+  // The scene's own stops (where each shape stands in the place it was set to clear the text), else every
+  // half screen. Past a stop, text may scroll on over a held background shape by design.
+  let stops = null;
+  try { stops = typeof window.__motionShapes.stops === 'function' ? window.__motionShapes.stops() : null; } catch { stops = null; }
+  const ys = stops && stops.length
+    ? [...new Set(stops.map(y => Math.round(Math.min(max, Math.max(0, +y || 0)))))].sort((a, b) => a - b)
+    : Array.from({ length: Math.min(80, Math.ceil(max / (innerHeight * 0.5)) + 1) }, (_, i) => Math.min(max, Math.round(i * innerHeight * 0.5)));
+  let steps = 0, judged = 0, at = 0;
+  for (const y of ys) {
+    // scroll there the way a visitor does, not in one jump: a jump can skip a reveal's trigger and leave its
+    // text hidden, which would hide a real overlap (the music shop sample's count-in heading stayed masked after a jump)
+    for (; at < y - 150; at += 150) { window.scrollTo(0, at); await frames(); }
+    at = y;
+    window.scrollTo(0, y);
+    await frames();
+    await sleep(60);
+    // wait for the scene to reach where this scroll puts it (a shape says settled: false while it eases there)
+    for (let t = 0; t < 3000 && read().some(s => s.settled === false); t += 100) await sleep(100);
+    steps++;
+    // three frames across a beat, so swinging parts (sticks, a bow) are caught at either end
+    for (let k = 0; k < 3; k++) {
+      const formed = read().filter(s => s.formed);
+      if (formed.length) {
+        judged++;
+        const boxes = lines();
+        formed.forEach(s => judge(s, boxes));
+      }
+      if (k < 2) await sleep(170);
+    }
+  }
+  window.scrollTo(0, 0);
+  return { hits, steps, judged };
+}
+
 async function evaluate(send, expression) {
   const r = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
   if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
@@ -774,6 +892,35 @@ async function main() {
             const m = await evaluate(send, `(${motionChecks.toString()})()`);
             m.errors.push(...takeJsErrors());
             results.push({ page, vp: `${vp.name} motion on`, ...m });
+            // A scene that reports its shapes: sweep the window sizes for a shape over text (once per page)
+            if (vp === VIEWPORTS.at(-1) && await evaluate(send, "typeof window.__motionShapes === 'function'")) {
+              const found = new Map();
+              const errors = [], warnings = [];
+              for (const sv of SWEEP) {
+                await send('Emulation.setDeviceMetricsOverride', { width: sv.width, height: sv.height, deviceScaleFactor: 1, mobile: sv.mobile });
+                const swept = waitFor('Page.loadEventFired');
+                takeJsErrors();
+                await send('Page.navigate', { url: pathToFileURL(file).href });
+                await swept;
+                await evaluate(send, 'document.fonts.ready.then(() => true)');
+                await sleep(400);
+                const s = await evaluate(send, `(${shapeSweep.toString()})(${SHAPE_POINTS}, ${SHAPE_AREA})`);
+                errors.push(...takeJsErrors());
+                if (!s.judged) warnings.push(`scene sweep at ${sv.name}: no shape was ever reported formed (${s.steps} scroll steps): check window.__motionShapes`);
+                // one error per shape: each window size where it covers text, with what it covers
+                for (const h of s.hits) {
+                  const f = found.get(h.shape) || new Map();
+                  const at = f.get(sv.name) || { y: h.y, dim: h.dim, texts: [] };
+                  if (h.y === at.y && at.texts.length < 3) at.texts.push(`${h.el} "${h.text}" (${h.score})`);
+                  f.set(sv.name, at);
+                  found.set(h.shape, f);
+                }
+              }
+              for (const [shape, f] of found) errors.push(`scene shape "${shape}" lies over text: ` +
+                [...f].map(([size, a]) => `at ${size} scrollY ${a.y}${a.dim != null ? ` (drawn at ${a.dim})` : ''}: ${a.texts.join(', ')}`).join('; ') +
+                `: place it clear of that text, anchored to the content's measured position, not viewport fractions (L-079)`);
+              results.push({ page, vp: 'scene sweep motion on', errors: [...new Set(errors)], warnings });
+            }
           } finally {
             await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
           }

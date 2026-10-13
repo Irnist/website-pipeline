@@ -149,6 +149,25 @@
     return () => cleanups.forEach(fn => fn());
   });
 
+  // ------------------------------------------------------------ scene shapes for QA (L-079)
+  // A fixed or background scene (a canvas stage, a big SVG behind the page) whose shapes stand near page text
+  // reports where they are, so browser_qa can sweep the page at 1280×720, 1440×900, 1731×860, 1920×1080 and
+  // 390×844 and error on a shape over text (a snare met the metronome only in the user's 1731×860 window).
+  // Define it where the scene knows its shapes (field.js on the music shop sample); it only reads, never changes the drawing:
+  //   window.__motionShapes = () => [{
+  //     name: 'snare',            // what the report calls it
+  //     x, y, w, h,               // viewport rect (CSS px) of what is drawn now
+  //     points: [[x, y], …],      // optional: the drawn points (particles); checked instead of the rect
+  //     settled: true,            // optional: false while it still eases toward where the scroll puts it (QA waits)
+  //     formed: true,             // fully assembled and settled (not mid-morph, not fading); only these are judged
+  //     dim: 0.75,                // optional: how bright it is drawn, for the report
+  //   }];
+  //   window.__motionShapes.stops = () => [0, 2140, …];  // optional: the scrollY values where each shape stands
+  //                                                       // in the place it was set to clear the text
+  // Only pages that define it get the sweep: at the stops if given, else every half screen. Give stops when text
+  // is meant to scroll on over a held background shape (dimmed) after it has formed in its clear place. Text on
+  // an opaque surface (a card, a photo) above a scene behind the page is skipped: the scene can't show through.
+
   // ------------------------------------------------------------ horizontal gallery
   // <section data-gsap="h-scroll" aria-label="…">
   //   <div class="h-track" data-gsap-track tabindex="0" role="region" aria-label="… (scrolls sideways)">…items…</div>
