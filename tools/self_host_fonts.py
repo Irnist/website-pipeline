@@ -12,12 +12,15 @@ faces plus an inline <style> of @font-face rules with font-display: swap. Use it
 Preload only the body text face (one, maybe two files); preloading every weight slows the first paint.
 """
 import hashlib
+import os
 import re
 import sys
 import urllib.request
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+# The site to work on, set by its tools/ stub: one shared copy of each tool serves every site (L-052)
+ROOT = Path(os.environ.get("SITE_ROOT") or sys.exit(
+    f"run this as `python tools/{Path(__file__).name}` in a site folder (SITE_ROOT is unset)")).resolve()
 FONTS = ROOT / "assets" / "fonts"
 PARTIAL = ROOT / "_src" / "partials" / "fonts.html"
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "

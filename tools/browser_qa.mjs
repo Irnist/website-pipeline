@@ -20,7 +20,12 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { lighthouse, scoreTable } from './lighthouse.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// The site to work on, set by its tools/ stub: one shared copy of each tool serves every site (L-052)
+if (!process.env.SITE_ROOT) {
+  console.error('run this as `node tools/<name>.mjs` in a site folder (SITE_ROOT is unset)');
+  process.exit(2);
+}
+const ROOT = resolve(process.env.SITE_ROOT);
 const AXE = join(dirname(fileURLToPath(import.meta.url)), 'vendor', 'axe.min.js');
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 // serious in axe, but a warning here: it fired on Trevor Travis's brand link (spans "Trevor Travis" + "Motors"

@@ -6,13 +6,16 @@
 EXIF-rotates, caps the long edge at 2000px, strips metadata, saves JPEG q80
 (PNG kept when it has transparency, e.g. cut-outs and logos). Existing outputs are skipped.
 """
+import os
 import re
 import sys
 from pathlib import Path
 
 from PIL import Image, ImageOps
 
-ROOT = Path(__file__).resolve().parent.parent
+# The site to work on, set by its tools/ stub: one shared copy of each tool serves every site (L-052)
+ROOT = Path(os.environ.get("SITE_ROOT") or sys.exit(
+    f"run this as `python tools/{Path(__file__).name}` in a site folder (SITE_ROOT is unset)")).resolve()
 EXTS = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".tif", ".tiff", ".bmp"}
 MAX = 2000
 

@@ -11,13 +11,16 @@ Unsplash search sits behind a bot check: never try to get around it. Find IDs so
 Open every downloaded file and check it before use (locale, plates, logos, text behind headlines).
 """
 import csv
+import os
 import re
 import sys
 import urllib.request
 from datetime import date
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+# The site to work on, set by its tools/ stub: one shared copy of each tool serves every site (L-052)
+ROOT = Path(os.environ.get("SITE_ROOT") or sys.exit(
+    f"run this as `python tools/{Path(__file__).name}` in a site folder (SITE_ROOT is unset)")).resolve()
 DEST = ROOT / "assets" / "img" / "stock"
 CREDITS = DEST / "CREDITS.csv"
 

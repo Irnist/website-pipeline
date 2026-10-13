@@ -5,13 +5,16 @@
 Run after `python _src/build.py`. Layout/contrast/overflow checks live in tools/browser_qa.mjs.
 """
 import json
+import os
 import re
 import sys
 from collections import defaultdict
 from html.parser import HTMLParser
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+# The site to work on, set by its tools/ stub: one shared copy of each tool serves every site (L-052)
+ROOT = Path(os.environ.get("SITE_ROOT") or sys.exit(
+    f"run this as `python tools/{Path(__file__).name}` in a site folder (SITE_ROOT is unset)")).resolve()
 DIST, OUT = ROOT / "dist", ROOT / "qa"
 sys.path.insert(0, str(ROOT / "_src"))
 import site_config as C  # noqa: E402
@@ -260,30 +263,16 @@ def css_motion(css):
     return found
 
 
-def pipeline_tools():
-    """The pipeline template's tools/, found by walking up from this project to the workspace
-    (Claude Workspace/Workflow and Pipeline/website-pipeline/template/tools). None outside the workspace."""
-    for parent in Path(__file__).resolve().parents:
-        tools = parent / "Workflow and Pipeline" / "website-pipeline" / "template" / "tools"
-        if tools.is_dir():
-            return tools
-    return None
-
-
-def stale_tools(warns):
-    """A project keeps its own copy of tools/. When the template's copy is newer and different, the project is
-    missing checks added since: the portfolio ran without Lighthouse or the CSS-motion check for days (L-052)."""
-    here = Path(__file__).resolve().parent
-    pipeline = pipeline_tools()
-    if pipeline is None or here == pipeline.resolve():
-        return
-    stale = [f for f in ("qa.py", "browser_qa.mjs", "lighthouse.mjs", "deploy.py", "self_host_fonts.py")
-             if (pipeline / f).exists() and (not (here / f).exists()
-                 or ((pipeline / f).stat().st_mtime > (here / f).stat().st_mtime
-                     and (pipeline / f).read_bytes() != (here / f).read_bytes()))]
-    if stale:
-        warns.append(f"tools/ older than the pipeline template: {', '.join(stale)}. Sync them (copy, or port the new "
-                     "checks into a customised copy) before trusting this report (L-052)")
+def copied_tools(warns):
+    """A site's tools/ holds stubs that run the pipeline's one shared copy of each tool. Full copies drifted: sites
+    ran 2-5 tools behind, and the portfolio went days without Lighthouse or the CSS-motion check (L-052)."""
+    shared = Path(__file__).resolve().parent
+    copies = [f.name for f in sorted((ROOT / "tools").glob("*")) if f.is_file() and (shared / f.name).is_file()
+              and "pipeline-tool-stub" not in f.read_text(encoding="utf-8", errors="replace")]
+    if copies:
+        warns.append(f"tools/ holds full copies of shared pipeline tools ({', '.join(copies)}), which miss every "
+                     "check added since. Swap them for stubs: python \"<pipeline>/dev/use_shared_tools.py\" "
+                     "\"<this site>\" (L-052)")
 
 
 def tight_leading(css):
@@ -670,7 +659,7 @@ def main():
         errors.append(f"Google Fonts CSS linked on {len(google_fonts)} page(s) ({', '.join(google_fonts[:4])}"
                       f"{', …' if len(google_fonts) > 4 else ''}): two render-blocking round trips, ~1.7s of mobile LCP "
                       "on Macz. Self-host: python tools/self_host_fonts.py \"<css2 URL>\" --preload \"Family:400\"")
-    stale_tools(warns)
+    copied_tools(warns)
     for t, where in empty_tokens.items():
         placeholders.insert(0, f"`{{{{{t}}}}}` has no value in site_config.py ({', '.join(where)})")
 
@@ -704,7 +693,7 @@ def main():
     # (L-027 repeat, 2026-10-08: r"<svg\b" became r"<svg<backspace>", so a regex silently stopped matching).
     ctrl = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
     # Hard-coded user paths break when the workspace moves (L-055: the pipeline moved into Website Portfolio and
-    # qa.py's own template path went dead). Derive paths from Path(__file__) instead.
+    # qa.py's own template path went dead). Derive paths from the script's location instead.
     abs_path = re.compile(r"[A-Za-z]:(?:/|\\)+Users(?:/|\\)+", re.I)
     for f in sorted([*(ROOT / "_src").rglob("*"), *(ROOT / "assets").rglob("*"), *(ROOT / "tools").glob("*")]):
         if f.is_file() and f.suffix.lower() in (".py", ".html", ".css", ".js", ".mjs", ".svg", ".json", ".md", ".txt"):

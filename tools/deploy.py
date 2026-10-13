@@ -24,7 +24,9 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+# The site to work on, set by its tools/ stub: one shared copy of each tool serves every site (L-052)
+ROOT = Path(os.environ.get("SITE_ROOT") or sys.exit(
+    f"run this as `python tools/{Path(__file__).name}` in a site folder (SITE_ROOT is unset)")).resolve()
 DIST = ROOT / "dist"
 NPX = shutil.which("npx") or "npx"
 HOSTS = ("netlify", "cloudflare")

@@ -14,7 +14,12 @@ import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// The site to work on, set by its tools/ stub: one shared copy of each tool serves every site (L-052)
+if (!process.env.SITE_ROOT) {
+  console.error('run this as `node tools/<name>.mjs` in a site folder (SITE_ROOT is unset)');
+  process.exit(2);
+}
+const ROOT = resolve(process.env.SITE_ROOT);
 const DIST = join(ROOT, 'dist');
 const OUT = join(ROOT, 'qa', 'lighthouse');
 const LIGHTHOUSE = 'lighthouse@13';
