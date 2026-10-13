@@ -1,0 +1,64 @@
+<!--
+  Contact page. The form encodes the site rules:
+  - selects start on an empty "Choose…" option and nothing is preselected
+  - phone becomes required when the contact preference is Phone call or Text
+  - URL prefill (?service=..., ?item=...) is guarded against empty/"null" values
+  - empty fields are not sent; demo mode (no FORM_ENDPOINT) says so honestly
+  - {{fn:form_fields}} writes the backend's hidden fields and spam trap (netlify / web3forms / Formspree URL)
+  - a "what happens next" line (NEXT_STEPS) sits right above the submit button
+  - never action="mailto:": it fails silently and throws the visitor into a mail app
+  On mobile the call option comes before the long form (DOM order).
+-->
+<section class="contact container">
+  <h1>Contact {{NAME}}</h1>
+
+  <aside class="contact__quick">
+    <p>The fastest way to reach us is a call.</p>
+    <a class="btn btn-call" href="{{PHONE_HREF}}">{{i:phone}}<span>Call {{PHONE}}</span></a>
+    {{fn:booking}}
+    <ul class="contact-list">
+      <li><a class="icon-row" href="{{EMAIL_HREF}}">{{i:mail}}<span class="wrap-anywhere">{{EMAIL_HTML}}</span></a></li>
+      <li><a class="icon-row" href="{{MAPS_URL}}">{{i:map-pin}}<span>{{ADDR1}}, {{ADDR2}}</span></a></li>
+    </ul>
+    {{fn:hours}}
+  </aside>
+
+  <form class="form contact__form" data-form {{fn:form_attrs}} novalidate>
+    <div class="field">
+      <label for="f-name">Name</label>
+      <input id="f-name" name="name" autocomplete="name" required>
+    </div>
+    <div class="field">
+      <label for="f-pref">Best way to reach you</label>
+      <select id="f-pref" name="contact_preference" required data-requires-phone="Phone call,Text" data-requires-email="Email">
+        <option value="">Choose…</option>
+        <option>Phone call</option>
+        <option>Text</option>
+        <option>Email</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-phone">Phone <span class="field__hint" data-phone-hint>(needed for calls and texts)</span></label>
+      <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" pattern="[0-9+\(\)\-.\s]{7,}" title="Digits, spaces and + ( ) - only">
+    </div>
+    <div class="field">
+      <label for="f-email">Email <span class="field__hint">(needed for email replies)</span></label>
+      <input id="f-email" name="email" type="email" autocomplete="email">
+    </div>
+    <div class="field">
+      <label for="f-service">Service</label>
+      <select id="f-service" name="service" data-prefill="service">
+        <option value="">Choose…</option>
+        {{fn:service_options}}
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-message">Message</label>
+      <textarea id="f-message" name="message" rows="5" data-prefill="item" data-prefill-template="Hi, I'm interested in the {value}."></textarea>
+    </div>
+    {{fn:form_fields}}
+    <p class="form__next" data-next-steps>{{NEXT_STEPS}}</p>
+    <button class="btn btn-submit" type="submit">Send message</button>
+    <p class="form__status" data-form-status role="status" aria-live="polite"></p>
+  </form>
+</section>

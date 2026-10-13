@@ -1,0 +1,726 @@
+# Lessons log
+
+Every mistake made on a website project is recorded here, so it isn't made again. Newest first.
+
+- **How entries get here:** Claude logs each mistake in the project's `PROJECT.md` › Mistakes the moment it happens, then merges them here at handoff.
+- **When it's read:** at the start of every project (Intake step 0).
+
+**Enforcement levels, strongest first.** Every lesson says which one it uses.
+- **check:** automated in `template/tools/` (`qa.py`, `browser_qa.mjs`). Every later project inherits it.
+- **rule:** a line in `~/.claude/CLAUDE.md`, loaded in every session.
+- **step:** a step in `SKILL.md` or `.pipeline/VISUAL-REVIEW.md`.
+- **log:** recorded only (a one-off or project-specific mistake).
+
+**Escalation:** a lesson whose *Seen* line lists two projects was not prevented by its enforcement. Upgrade it: a log becomes a rule; a rule becomes a check where checkable, otherwise a step earlier in the pipeline.
+
+Entry format:
+
+```
+### L-### · YYYY-MM-DD · <project> · <area: imagery | identity | copy | mobile | forms | a11y | perf | process | tooling>
+- Mistake: what went wrong, concretely
+- Caught by: user | qa | browser-qa | critique | reviewer | self
+- Root cause: why it happened (the assumption or gap, not the symptom)
+- Prevention: the rule that stops it
+- Enforced by: check (file) | rule (CLAUDE.md section) | step (file) | log
+- Seen: <project>, <project>, ...
+```
+
+---
+
+Entries L-003 to L-016 were mined on 2026-10-07 from the impeccable critiques of IronCity (2026-10-06, 28/40) and Weknz (2026-10-06, 23/36). New checks were proven against planted defects, a clean template build, and copies of both shipped sites.
+
+### L-079 · 2026-10-13 · Music shop sample · motion
+- Mistake: the homepage stage's particle snare overlapped the count-in metronome in the user's 1731×860 window, although it sat clear at 1440×900.
+- Caught by: user (screenshot)
+- Root cause: the fixed stage's instrument was placed by viewport fractions (x -.16w, y .21h, size by min(w, 1.6h)), while the text and metronome next to it follow the layout (container width, grid centring, the pin's 'center center'). The two scale differently, so a placement checked at one window size drifts at another.
+- Prevention: anchor a fixed-scene object that sits close to page content to that content's measured position (as the hero guitar is anchored to its box). Check every placement at several desktop sizes (1280×720, 1440×900, 1920×1080, and the user's own window when known) as well as 390.
+- Enforced by: rule (CLAUDE.md › Accessibility & performance › GSAP `advanced`) + `design-library/patterns.md` › Advanced motion system
+- Seen: Music shop sample
+
+### L-078 · 2026-10-13 · Music shop sample · motion
+- Mistake: on desktop the count-in heading and lede vanished partway through the section's 1,500px pin (visible in the user's screenshot; they didn't mention it).
+- Caught by: self (looking at the user's screenshot)
+- Root cause: the replaying line reveal (`inView()`) ends at 'bottom top' and resets on leave. For text inside a pinned section, that end is measured without the pin's scroll length, so the trigger "left" while the text was still pinned on screen. `pinnedContainer` doesn't fix it: ScrollTrigger only offsets triggers that start after the pin starts, and a reveal starts before.
+- Prevention: `inView()` adds the pin's length to its end for text inside `[data-pin]` (or the h-scroll recipe), the pin gets `refreshPriority: 1` so it is measured first, and a reset waits until the element really is off-screen.
+- Enforced by: template fix (`template/assets/js/motion.js` inView + h-scroll pin)
+- Seen: Music shop sample
+
+### L-077 · 2026-10-13 · Music shop sample · motion
+- Mistake: on the first pass of the scroll-morphing instrument stage (a fixed canvas behind the home page), the keyboard was tipped nearly edge-on and read as a striped terrain through a paragraph; the trumpet sat behind the previous section's opaque photo; and the drum kit never formed under the short quote section because the closing section's morph had already started.
+- Caught by: self (screenshot sweeps at 1440 and 390)
+- Root cause: each form was placed on a single frame, without checking the stacking order (the stage sits at z-index -1, so photos cover it) or the neighbouring sections' scroll windows (`top 85%` → `top 30%` overlapped under a short section).
+- Prevention: for any fixed, scroll-driven background scene, check each state at the scroll point where it's fully formed, never behind an opaque media block, at both widths. Keep trigger windows short (`top 65%` → `top 35%`) so short sections still get a full state. Draw 3D objects tipped toward the camera, not edge-on.
+- Enforced by: log (`design-library/patterns.md` › Advanced motion system › Placement rule)
+- Seen: Music shop sample
+
+### L-076 · 2026-10-12 · Music shop sample · motion
+- Mistake: at 390px with motion on, the home page's section and count-in ScrollTriggers started 90–170px below where the layout put them (browser-qa error), so stage morphs and count-in steps fired late.
+- Caught by: browser-qa (motion-on pass)
+- Root cause: SplitText `autoSplit` re-splits a heading or paragraph when the web font arrives and rebuilds only that element's trigger; the new line count shifts everything below it, but the other triggers keep their old measurements. The `load` refresh had already run.
+- Prevention: any SplitText `autoSplit` setup refreshes every ScrollTrigger (debounced) after a re-split and after `document.fonts.ready`.
+- Enforced by: check (browser_qa.mjs "ScrollTrigger start(s) disagree with the layout" already caught it) + template fix (`template/assets/js/motion.js` split block)
+- Seen: Music shop sample
+
+### L-075 · 2026-10-12 · Music shop sample · tooling
+- Mistake: qa.py listed "placeholder text `todo`" on every page, a duplicate of the real data-todo entries that padded the handoff list.
+- Caught by: self (handoff review)
+- Root cause: the `\bTODO\b` placeholder regex runs over raw HTML too, and the hyphen in the `data-todo` attribute name counts as a word boundary.
+- Prevention: placeholder regexes that scan raw HTML must exclude attribute names; read every placeholder line before copying the list into a handoff.
+- Enforced by: check fix (`(?<!data-)` lookbehind in qa.py, project and template; a real TODO in text still matches)
+- Seen: Music shop sample
+
+### L-074 · 2026-10-12 · Music shop sample · imagery
+- Mistake: page alt texts were written for the planned shots before the stock arrived, so several described pictures the site doesn't show.
+- Caught by: self (photo review)
+- Root cause: pages were drafted ahead of imagery, and nothing linked an alt to its delivered photo.
+- Prevention: write each alt only after opening that photo, from what it shows.
+- Enforced by: step (SKILL.md › 3 Content & imagery › Images)
+- Seen: Music shop sample
+
+### L-073 · 2026-10-12 · Music shop sample · visual identity
+- Mistake: about 16 short amber "spark" labels sat directly *under* section headings across home, instruments and audio devices. That is the eyebrow-on-every-heading template rhythm, moved below the heading where qa.py's eyebrow check (labels *above* h2/h3 only) didn't see it.
+- Caught by: reviewer (impeccable finish reviewer)
+- Root cause: I treated the eyebrow rule as "nothing above the heading" instead of "no small label paired with most headings", and the check only looked one way.
+- Prevention: a short accent label is kept only where it carries an offer or a fact the heading doesn't (free setup, free site visit); everywhere else the heading and lede stand alone.
+- Enforced by: check (`qa.py` counts short spark/accent/badge/label elements right after an h2/h3 toward the eyebrow ratio; fires on a planted copy with 13 labels; quiet on this clean site, the clean template, Gadget Zone, Macz, Trevor Travis and Weknz; IronCity's existing hit is its old above-heading eyebrows, unchanged at 30/66; synced to the template) + rule (CLAUDE.md › Visual identity)
+- Seen: Music shop sample
+
+### L-072 · 2026-10-12 · Music shop sample · forms
+- Mistake: the contact form made phone required for "Phone call" or "Text", but choosing "Email" left the email field optional. With phone optional too, a lead could arrive with no way to reply. The gap was in the template, so every site built from it had it.
+- Caught by: critique (impeccable Assessment A, rated P1)
+- Root cause: the conditional-requirement rule was written for phone only, and the template's `data-requires-phone` covered one reply route.
+- Prevention: every reply route the contact-preference select offers becomes required when it is picked (`data-requires-phone="Phone call,Text"`, `data-requires-email="Email"`; main.js handles both). Past sites with the old form: Gadget Zone, Macz Arkitektura, Trevor Travis Motors (fix only if reopened).
+- Enforced by: check (`qa.py` errors on a select with data-requires-phone and an Email option but no data-requires-email; proven on a planted copy and the clean site) + template fix (main.js, contact.html) + rule (CLAUDE.md › Forms)
+- Seen: Music shop sample
+
+### L-071 · 2026-10-12 · Music shop sample · motion
+- Mistake: the pinned count-in swung its metronome needle but never lit a step. Its ScrollTrigger `onUpdate() { this.progress … }` read undefined, so the step index was NaN. Browser QA's motion pass reported 0 errors.
+- Caught by: self (a motion-on DevTools check of `.is-on` while scrolling through the pin)
+- Root cause: I applied L-048's "use `this`" beyond its scope. A tween's callbacks bind `this` to the tween (`this.progress()` is a method), but ScrollTrigger callbacks pass the trigger as an argument and leave `this` unbound. No check looked at class or state changes a scroll moment is meant to make.
+- Prevention: tween callbacks use `this.progress()`; ScrollTrigger callbacks use their argument, `onUpdate(self) { self.progress }`. After building a scroll moment, scroll through it with motion on and assert the state it should change (a class, a value), not just that the page doesn't throw.
+- Enforced by: check (`qa.py` errors on `this.progress` / `this.direction` / `this.isActive` read as a property in motion.js; proven against a planted copy and the fixed file)
+- Seen: Music shop sample
+
+### L-070 · 2026-10-11 · Org Chart · mobile
+- Mistake: emails in the details dialog were cut off on the user's phone. To stop a mid-domain break ("greencross.com." / "ph") I had swapped `overflow-wrap: anywhere` for `break-word`. In a grid row with an icon and a Copy button, that left "@greencross.com.ph" as one unbreakable piece wider than its column on real devices and larger phone text, and the scrolling panel clipped it. Chrome emulation at 360/390 with default text never showed it.
+- Caught by: user
+- Root cause: `break-word` doesn't lower an element's min-content width, so in grid and flex cells it can't be relied on; `anywhere` can. I verified only at default text size in one engine.
+- Prevention: long strings use `overflow-wrap: anywhere` plus a `<wbr>` before "@" (still the first break taken). On phones, give contact values the full row width, with action buttons moved beside the label. Test contact rows at 320px and with 130% text.
+- Enforced by: check (`qa.py` warns on `overflow-wrap: break-word`) + rule (CLAUDE.md › Mobile, long unbroken strings)
+- Seen: Org Chart
+
+### L-069 · 2026-10-10 · Org Chart · mobile
+- Mistake: once the leadership section scrolled off-screen, the replaying staff entrance reset its cards to x:20, which made the 390px page 4px wider. My overflow checks only ran with the page at the top.
+- Caught by: self (while testing the back-to-top button)
+- Root cause: a replaying entrance puts its off-screen "from" state back, so overflow depends on scroll position. This site isn't a pipeline site, so `browser_qa.mjs`'s motion pass (which scrolls the whole page checking overflow) never ran on it.
+- Prevention: on any GSAP page, check overflow while scrolling the full page, not just at the top. On non-pipeline sites, run the template's `browser_qa.mjs` motion pass or an equivalent scroll-through check. Clip sections whose entrances start sideways (`overflow-x: clip`).
+- Enforced by: check (`browser_qa.mjs` motion pass; pipeline sites only)
+- Seen: Org Chart
+
+### L-068 · 2026-10-10 · Org Chart · a11y
+- Mistake: the search's "pop" on a found card used GSAP `overwrite: true`, which also killed the card's replaying entrance tween. A staff card found while its entrance was reset stayed at opacity 0, so the search scrolled to an invisible person.
+- Caught by: self (screenshot of the back-to-top test)
+- Root cause: `overwrite: true` kills all tweens of the target immediately, not just ones that animate the same properties.
+- Prevention: use `overwrite: 'auto'` (it cancels only overlapping properties) on any tween of an element that also has an entrance or other motion.
+- Enforced by: check (`qa.py` warns on `overwrite: true` in motion.js)
+- Seen: Org Chart
+
+### L-067 · 2026-10-10 · Org Chart · identity
+- Mistake: the staff card (grid column 1) and the next leader (column 2) auto-placed into the same grid row, so the staff member sat level with the second leader instead of between the first and second leaders. My own 1440 screenshot showed it and I didn't catch it.
+- Caught by: user
+- Root cause: CSS grid auto-placement fills an empty cell in the current row when an item has a definite column; DOM order alone doesn't give each item its own row.
+- Prevention: in hierarchy/tree grids where items sit in different columns, set each item's `grid-row` explicitly. When checking a chart screenshot, compare every node's position with the source, not just the overall look.
+- Enforced by: log
+- Seen: Org Chart
+
+### L-066 · 2026-10-10 · Org Chart · imagery
+- Mistake: 7 of 32 portraits in the source Excel were shapes filled with a photo (`xdr:sp` with `a:blipFill`), and the extractor only read pictures (`xdr:pic`), so all seven showed initials. I then told the user they "have no photo on the sheet".
+- Caught by: user
+- Root cause: assumed every embedded image is an `xdr:pic`; didn't reconcile the media count (36 files) with the photos found (25).
+- Prevention: when extracting images from Office files, read every `a:blip` (pictures, shape fills, groups) and reconcile the count of referenced media against what was matched before claiming something is missing.
+- Enforced by: log
+- Seen: Org Chart
+
+### L-065 · 2026-10-10 · Org Chart · mobile
+- Mistake: the masthead went two-column (title `1fr` + search `auto`) at 900px, but the title's longest word ("ORGANIZATIONAL" at 5.6rem) is its min-content, so 1024 overflowed by 23px.
+- Caught by: self (overflow scan at 1024)
+- Root cause: I only scanned 390 and 1440. A side-by-side breakpoint has to fit the min-content of a big unbreakable headline word plus the other column.
+- Prevention: set two-column header breakpoints from the headline's min-content + sidebar width, and scan one mid width (1024) as well as 390/1440.
+- Enforced by: log
+- Seen: Org Chart
+
+### L-064 · 2026-10-10 · Org Chart · identity
+- Mistake: search "dimmed" non-matching cards with `opacity`, so the connector lines behind them (tree rails, z-index below the cards) showed straight through the faded avatars and tabs.
+- Caught by: self (search screenshot)
+- Root cause: opacity on an element makes it see-through; anything layered behind it (connectors, rails, a trunk line) appears over its content.
+- Prevention: to dim an element that sits over lines or other layers, fade in a page-coloured veil (`::after`, opacity via a CSS variable from JS) instead of lowering the element's own opacity.
+- Enforced by: log
+- Seen: Org Chart
+
+### L-063 · 2026-10-10 · Macz Arkitektura (redesign) · mobile
+- Mistake: the phone 2-column `.proj-row` media query sat above the base `.proj-row` rule, so the base rule won the cascade and the row stayed 1-column at 390.
+- Caught by: self (390 screenshots)
+- Root cause: the breakpoint override was written next to a related component instead of after its own base rule.
+- Prevention: put each breakpoint override after its component's base rules; check every grid at 390 in the screenshot pass.
+- Enforced by: log
+- Seen: Macz Arkitektura
+
+### L-062 · 2026-10-10 · Macz Arkitektura (redesign) · a11y
+- Mistake: `data-gsap="split"` on the quote band's `<p>`. SplitText adds an `aria-label` with the full text, and axe flags `aria-label` as prohibited on a paragraph.
+- Caught by: browser-qa (axe)
+- Root cause: the split target was chosen for its look, not its role. motion.js's comment said "headline", but nothing checked it.
+- Prevention: split headings only (the quote became `<h2 class="band__quote">`).
+- Enforced by: check (`qa.py` › gsap_checks: `data-gsap="split"` on a tag other than h1–h6, a, button, blockquote, figure, section or li = error; fires on a planted `<p>`, quiet on Macz and Gadget Zone)
+- Seen: Macz Arkitektura
+
+### L-061 · 2026-10-10 · Macz Arkitektura (redesign) · tooling
+- Mistake: the redesign's first deploy created a second Cloudflare Worker (`macz-arkitektura-website-preview-xmcon`). The preview URL the user already had kept showing the old design.
+- Caught by: self (unexpected URL suffix)
+- Root cause: the redesign archive (L-057/L-058) moved `.pipeline/` and its `cloudflare.json` into `_temp`, and deploy.py treats missing state as a brand-new site.
+- Prevention: deploy.py `archived_state()` reuses the newest `_temp/<Name>-previous-*/.pipeline/<host>.json` when the project has none, so a redesign deploys over its old preview.
+- Enforced by: check (template `tools/deploy.py` load_state; proven on a stateless copy of the project)
+- Seen: Macz Arkitektura
+
+### L-060 · 2026-10-10 · Macz Arkitektura (redesign) · identity
+- Mistake: the blurred page backdrop (`body::before`, `position: fixed; z-index: -1`) never showed. `body` kept its own `background`, which paints over a negative-z layer once `html` has a background too. I regraded the backdrop twice (B&W, then a warm duotone) without seeing either.
+- Caught by: self, sampling the gutter pixels in the 1440 screenshot (#0a0702 everywhere)
+- Root cause: I assumed the layer was visible and judged the image, not the rendered page.
+- Prevention: the page colour goes on `html` and `body` stays transparent. After any backdrop change, sample the rendered pixels, not the source image.
+- Enforced by: check (`qa.py` › buried_backdrop: a negative-z `body::before/::after` plus a filled `body` background = error; fires on planted CSS, quiet on the template and on all 7 shipped stylesheets)
+- Seen: Macz Arkitektura
+
+### L-059 · 2026-10-10 · Macz Arkitektura (redesign) · tooling
+- Mistake: a build that was cut off mid-write left a 0-byte WebP (`tropical-house-…-1600.webp`) in the image cache. Every later build saw the file existed and copied the empty file to dist, and `qa.py` then crashed with PIL `UnidentifiedImageError`.
+- Caught by: self (qa.py traceback)
+- Root cause: `build.py` `webp_variants()` wrote straight to the cache path and only checked `exists()`.
+- Prevention: write each variant to a `.tmp` name and `replace()` it into place; treat a 0-byte cache file as missing.
+- Enforced by: check (template `_src/build.py` webp_variants)
+- Seen: Macz Arkitektura
+
+### L-058 · 2026-10-10 · Macz Arkitektura (redesign) · process
+- Mistake: the user answered "Yes, redesign it", and I archived the site, scaffolded with `-NoLaunch` and started redesigning on my own from the old BRIEF.md. I learned a new library reference, picked a dark direction, a palette, fonts and stock photos. The brief form was never opened, so the user had no chance to enter the new details.
+- Caught by: user ("If I choose to redesign a website, run the Brief.Md window just like when we are making a new website. Don't redesign it on your own. I will put all the details in our Brief.Md window")
+- Root cause: L-057's "Yes" branch said "keep BRIEF.md … run the normal new-site process from Intake". Under `/website` that reads as Intake on the old brief. But a new site begins in the launcher's brief form, and `scaffold.ps1 -NoLaunch` skips that form.
+- Prevention: a redesign starts exactly like a new site. Archive the old site *and its BRIEF.md*, reset BRIEF.md to the template's blank brief, keep `client-assets/` (the form lists the files and the user can remove any), then open the brief form with `python "<pipeline>/brief-form/brief_form.py" "<project>"` (run in the background) and wait. Exit 0 ("Start building") = run Intake on the new brief. Exit 3 (closed) = stop and say the brief is saved. No direction, design-library learning, stock search or design work before the user clicks Start building.
+- Enforced by: step (SKILL.md › 0 · Where am I?, finished-site row, "Yes" branch); rule (CLAUDE.md › Pipeline & questions, sharpened)
+- Seen: Macz Arkitektura
+
+### L-057 · 2026-10-10 · Macz Arkitektura (re-run) · process
+- Mistake: `/website` ran with no args in the finished Macz folder (every phase ticked), and I went ahead on my own. I synced the tools, ported the CSS motion to JS, re-exported the Projects hero and redeployed the preview, all without asking whether the user wanted the site touched.
+- Caught by: user ("Next time, if the new website has the same name, ask me first if I want to redesign it")
+- Root cause: the entry table had rows for "scaffold" and "resume an unchecked phase", but none for a finished site reopened by the same name. Autopilot treated "run the current checks" as the obvious default.
+- Prevention: when a same-name folder holds a finished project and no phase or change was asked for, ask one question first: redesign it? No = do nothing at all. Yes = archive the old site to `_temp`, keep BRIEF.md and client-assets, and run the normal new-site process from Intake. Unfinished projects still resume without asking.
+- Enforced by: step (SKILL.md › 0 · Where am I?, finished-site row); rule (CLAUDE.md › Pipeline & questions)
+- Seen: Macz Arkitektura
+
+### L-056 · 2026-10-10 · Pipeline (design library) · tooling
+- Mistake: the first version of `dev/learn_prep.py` (which ingests images dropped into `design-library/inspiration/`) let a drop named `macz-reference-1.jpg` overwrite the learned `macz-reference-1.webp`. The "names taken" set subtracted every drop's name, including names that belong to existing images. Its viewing crops were also cached by slug, so a later image with a reused name would have been studied from the old crops.
+- Caught by: self (edge-case test on a library copy in `_temp`, before any real use)
+- Root cause: a file-ingest step written without a collision case in mind, in a folder that holds both new drops and finished files.
+- Prevention: any script that writes into a folder of user files is tested on a copy with a same-name collision, a case-only rename (Windows treats `Hero.webp` and `hero.webp` as one file) and a re-run, and it moves originals aside rather than overwriting. Derived files are rebuilt, never reused by name.
+- Enforced by: log (fixed in `learn_prep.py`: taken names = existing slug `.webp` files, `-2` suffixes, originals moved before converting, crops rebuilt each run)
+- Seen: Pipeline (design library)
+
+### L-055 · 2026-10-10 · Portfolio (Ernest Banigon), pipeline · process
+- Mistake: work was spread across absolute paths outside the workspace. Scratch files went to the session scratchpad in AppData, the brief form kept a 455 MB Edge profile in `%LOCALAPPDATA%`, and SKILL.md, CLAUDE.md, README, `scaffold.ps1`, `qa.py` and the Warp launcher hard-coded `C:/Users/Administrator/Desktop/...`. When the pipeline moved into the workspace, `qa.py`'s stale-tools check pointed at a dead path. Also, the same session, a test script `chdir`ed into the template and then resolved its relative arguments there, writing planted copies into `template/_temp/` (which the scaffold would have copied into every new project).
+- Caught by: user ("you are not working on a relative path"; then: the workspace is `Website Portfolio`, and `Portfolio Screenshots` is only for screenshots), self (the stray template folder)
+- Root cause: no defined workspace. Every tool and doc picked its own absolute location, and the system scratchpad was used by default.
+- Prevention: one workspace, `Desktop\Claude Workspace` (named Website Portfolio until later on 2026-10-10). Scratch goes in `<workspace>/_temp/`; `Portfolio Screenshots/` holds only finished-site screenshots. Scripts derive paths from their own location (`Path(__file__)`, `$PSScriptRoot`, with the skills junction resolved) and resolve CLI arguments against the workspace, never the cwd. The scaffold skips `_temp`, `qa` and `dist` when copying the template.
+- Enforced by: check (`qa.py` warns on a hard-coded `C:/Users/` path in `_src/`, `assets/` and `tools/`; `pipeline_tools()` finds the template by walking up); rule (CLAUDE.md › Workspace); step (SKILL.md › Workspace)
+- Seen: Portfolio (2026-10-10)
+
+### L-054 · 2026-10-10 · Portfolio (Ernest Banigon) · layout
+- Mistake: in the 2×2 process grid, step 1's heading sat ~9px lower than step 2's, from the first build on.
+- Caught by: self (screenshot while checking GSAP motion)
+- Root cause: each step is itself a grid, stretched to the height of the tallest item in its row; with the default `align-content`, the spare height was spread across its rows and pushed the heading down.
+- Prevention: items in a multi-column row that are themselves grids or flex columns get `align-content: start` (or `justify-content: flex-start`). When judging a row of cards, compare the heading lines across the row.
+- Also (same session, tooling): a test script's `scrollIntoView` + `scrollBy` on a site with `scroll-behavior: smooth` became an interrupted smooth scroll, and the screenshot showed the wrong section. Test scripts scroll with `window.scrollTo({ top, behavior: 'instant' })`.
+- Enforced by: step (`.pipeline/VISUAL-REVIEW.md` › Layout: compare heading lines across each row of cards)
+- Seen: Portfolio (process steps)
+
+### L-053 · 2026-10-10 · Portfolio (Ernest Banigon) · perf
+- Mistake: Lighthouse mobile CLS 0.26 on the homepage. The only culprit was the hero's decorative glow (`.ambient::before`).
+- Caught by: browser-qa (Lighthouse, once the project's tools were synced, L-052)
+- Root cause: the glow's `inset: -12%` made its top edge a percentage of the hero's height. When the web font swapped in and the hero grew a few pixels, the top moved, and a 1,300px blurred layer counts as a big shift.
+- Prevention: anchor decorative absolute layers (glows, textures, scrims) with fixed top offsets (rem/px); a change in height alone isn't a shift. Self-hosted, preloaded fonts also shrink the swap.
+- Enforced by: check (`browser_qa.mjs` Lighthouse errors on CLS > 0.25 and warns above 0.1; the culprit is in `qa/lighthouse/<page>.json` › layout-shifts)
+- Seen: Portfolio (hero glow)
+
+### L-052 · 2026-10-10 · Portfolio (Ernest Banigon) · process
+- Mistake: four defects sat unseen on the live portfolio (Google Fonts linked, CLS 0.26, CSS transitions everywhere against the 2026-10-09 rule, a deprecated h1 size) because its `tools/` were copied from the template on 10-08 and never updated. Lighthouse, the CSS-motion check and the font check all arrived in the template afterwards.
+- Caught by: self (bringing the template's QA in to add GSAP)
+- Root cause: each project keeps its own copy of the tools, and nothing compares that copy with the template's when a project is resumed.
+- Prevention: when resuming an older project, sync `tools/` from the template first (copy the template's version, or port its new checks into a customised copy), then run QA.
+- Enforced by: check (`qa.py` warns when a template tool is newer than the project's copy and differs from it) + step (SKILL.md › 0, resume row)
+- Seen: Portfolio
+
+### L-051 · 2026-10-10 · Portfolio (Ernest Banigon) · typography
+- Mistake: display headings were set to line-height .98. When "Have a project in mind?" wrapped, the "j" of "project" sat on the "?" below it, and the hero's "g" in "Designer" nearly touched the "l" in "Specialist" on phones.
+- Caught by: user (screenshot)
+- Root cause: tight leading was picked for looks at one width without checking a wrapped line where a descender sits over an ascender. Serif display faces with long descenders need more room than caps-heavy faces. `impeccable detect` had flagged "tight-leading" on these exact headlines twice, and it was filed as a deliberate false positive without anyone looking at a wrapped line. A detector flag is a prompt to look at the real render before dismissing it.
+- Prevention: display type gets line-height 1.05 or more (1.1 for long-descender serifs). Check every multi-line headline at each width where it wraps, and look closely at descender/ascender pairs.
+- Enforced by: check (`tools/qa.py` errors on any line-height below 1; `ALLOW_PATTERNS['tight-leading']` opts out for all-caps faces with no descenders. Proven on planted rules, a clean template build and the portfolio; Trevor Travis Motors (shipped) would now flag four rules, including a single-line `::before` numeral)
+- Seen: Portfolio (contact heading, hero)
+
+### L-050 · 2026-10-09 · Gadget Zone, template · tooling
+- Mistake: on Gadget Zone's home at desktop size, the two dividers below the pinned bench drew 900px early, off-screen, so nobody saw it. Their ScrollTriggers were created before the pin. The template's own pinned h-scroll gallery had the same latent bug for anything animated below it (planted test: 5 triggers 1,792px early).
+- Caught by: self, prompted by the official GreenSock gsap-skills ("create ScrollTriggers in page order, or set refreshPriority"); confirmed in Chrome
+- Root cause: ScrollTrigger refreshes in creation order, and motion.js is written by moment type, not page order. No check compared trigger starts with the layout.
+- Prevention: the template's motion.js sorts triggers into page order before every refresh (`refreshInit` → `ScrollTrigger.sort()`, which orders by page position). Keep that line. Note: in GSAP 3.15 a *higher* `refreshPriority` refreshes first (the official skill's table says lower; the source says higher).
+- Enforced by: check (`tools/browser_qa.mjs` motion pass: a ScrollTrigger start that disagrees with its trigger's layout position by >60px is an error; proven on the bug and a planted template defect) + step (SKILL.md › Build 4)
+- Seen: Gadget Zone (home dividers), template (h-scroll)
+
+### L-049 · 2026-10-09 · Gadget Zone, template · process
+- Mistake: scroll-drawn circuit traces lit their nodes ahead of the line, three times. First, separate triggers for the rail and the nodes. Then the node times were measured once, so they drifted after a width change. Last, on the bench the steps themselves rise 16px, carrying their nodes below the measured spot.
+- Caught by: self (a scripted sync check: scroll in 20–40px steps and compare each lit node with the rail's end)
+- Root cause: something that "follows" another animation ran on its own clock, or on positions measured once from a layout that keeps changing.
+- Prevention: a follower reads the leader's own progress (the rail tween's progress, not a second trigger), positions are re-measured on every ScrollTrigger refresh, and a moving item's current offset (y) is part of its position. Use the template's `trace()` helper rather than rebuilding one.
+- Enforced by: step (template `motion.js` `trace()` + `data-gsap="trace"` recipe; SKILL.md › Build 4)
+- Seen: Gadget Zone (About timeline, home bench)
+
+### L-048 · 2026-10-09 · Pipeline (template) · tooling
+- Mistake: an `onUpdate: () => light(rail.progress())` arrow read its tween's `const` during the tween's first render (before assignment). The ReferenceError stopped motion.js, so no scroll animation on the page ran, and browser QA still reported 0 errors.
+- Caught by: self (a browser sync check found zero ScrollTriggers)
+- Root cause: GSAP renders a fromTo immediately, which calls onUpdate inside the constructor. And browser_qa never listened for uncaught page errors.
+- Prevention: GSAP callbacks use `function () { this.progress() }`, never the outer const. Any uncaught page error is a QA error.
+- Enforced by: check (`tools/browser_qa.mjs`: `Runtime.exceptionThrown` → error on every pass, attributed per page load; proven with the planted bug)
+- Seen: Pipeline (template recipe build)
+
+### L-047 · 2026-10-09 · Gadget Zone · a11y
+- Mistake: GSAP's bench steps waited "unlit" at opacity 0.3 before their scroll animation lit them. Lighthouse measured the waiting text at 1.7–1.8:1 and homepage accessibility dropped from 100 to 97, yet QA reported no error.
+- Caught by: qa (Lighthouse score drop, found on reading the report; no check fired)
+- Root cause: two gaps. A dimmed "before" state was chosen by eye, not checked as a text surface. And QA only acted on the accessibility score: browser_qa's contrast pass emulates reduced motion, so it never sees animation states, and 97 sat above the 95 warning floor.
+- Prevention: text a scroll animation holds dim must still pass contrast in that state (Gadget Zone's muted text needs ≥0.65 opacity). Carry "unlit" with non-text cues (bars, nodes, a small rise). Any Lighthouse color-contrast failure is an error, whatever the score.
+- Enforced by: check (`tools/lighthouse.mjs`: color-contrast audit failure → error; Lighthouse runs with motion on) + step (SKILL.md › Build 4)
+- Seen: Gadget Zone
+
+### L-046 · 2026-10-09 · Gadget Zone · mobile
+- Mistake: a scrubbed GSAP `rotation` on the hero's ring `<svg>` widened the page to 418px at 390. The rotated square box's corners stuck out past the screen.
+- Caught by: browser-qa (GSAP motion-on pass)
+- Root cause: rotating or scaling a box-shaped element changes its layout bounds, even when what you see (a circle) doesn't move.
+- Prevention: rotate shapes inside the SVG (`svgOrigin` at the viewBox centre) or clip the parent; never rotate a full-width box.
+- Enforced by: check (`browser_qa.mjs` motion pass: overflow while scrolling)
+- Seen: Gadget Zone
+
+### L-045 · 2026-10-08 · Gadget Zone · tooling
+- Mistake: two `browser_qa.mjs` faults. (1) The pill-wrap check matched `.pillbar` containers through `[class*="pill"]`, so a bar of pills spanning rows was reported as a wrapping pill. (2) Reading Chrome's `DevToolsActivePort` threw EBUSY on Windows about 1 run in 5 and crashed the whole run.
+- Caught by: self
+- Root cause: (1) a substring class selector catches containers as well as the items; (2) the file was read the moment it existed, while Chrome still held it open.
+- Prevention: the wrap check skips elements that contain pills, badges or buttons; the port read retries on error.
+- Enforced by: check (`template/tools/browser_qa.mjs`)
+- Seen: Gadget Zone
+
+### L-044 · 2026-10-08 · Gadget Zone · copy
+- Mistake: the Home band and the Deals meta said "up to 28% off", while two Deals badges said "29% off". The badges rounded 28.7% up, and the copy was typed by hand.
+- Caught by: reviewer (impeccable finish reviewer)
+- Root cause: a figure derived from data was retyped in copy instead of computed, and rounding up overstates a saving.
+- Prevention: compute every "up to N%", "from ₱X" and count from the data with a helper, and round savings down. Where the figure must sit in static text (meta descriptions), assert at build time that the text matches the data.
+- Enforced by: log (project pattern: `deal_off()`, `MAX_OFF`, an assert in `site_config.py`); extends rule CLAUDE.md › Copy & content "claims consistent"
+- Seen: Gadget Zone
+
+### L-043 · 2026-10-08 · Gadget Zone · mobile / imagery
+- Mistake: on phones the shop cards put each 4:3 product photo in an 8rem side column with `min-height: 100%`. `object-fit: cover` then showed only about 20% of each photo's width, so the products were cut to slivers.
+- Caught by: browser-qa (srcset "blurry, drawn 635px" warnings), confirmed in the screenshot
+- Root cause: a horizontal phone card was chosen without checking the photos' aspect ratio. The srcset warning was a symptom, and raising `sizes` would have hidden it.
+- Prevention: a frame must roughly match its photos' aspect ratio. When an image is drawn far wider than its box, the photo is being cropped: look at it before touching `sizes`.
+- Enforced by: check (`template/tools/browser_qa.mjs` warns when a cover crop keeps under 45% of the photo's width or height; deliberate backdrops opt out with `data-crop-ok`). Proven against the planted Gadget Zone rule: 24 warnings, and 0 on the fixed build.
+- Seen: Gadget Zone
+
+### L-042 · 2026-10-08 · Gadget Zone · forms / a11y
+- Mistake: the spotlight product's colour swatches copied the reference's look (dots with names) but were plain spans. Tapping one did nothing, and the colour was lost when the item was reserved.
+- Caught by: critique (impeccable, P1)
+- Root cause: reproduced a reference's visuals without its behaviour, because the static mockup showed what they look like, not what they do.
+- Prevention: anything styled like a control (swatches, chips, toggles, steppers, tabs) is a real control that does what it suggests, with no default chosen and its value carried through. Otherwise restyle it as plain text.
+- Enforced by: rule (CLAUDE.md › Forms & data)
+- Seen: Gadget Zone
+
+### L-041 · 2026-10-08 · Ernest Banigon portfolio · mobile
+- Mistake: on phones, an empty band of about 120px sat between the poster rail and the Skills heading. The user circled it.
+- Caught by: user (screenshot)
+- Root cause: three spacings stacked with nothing to mark the boundary: the section's bottom padding, the scroll-snap rail's bottom padding (room for its scrollbar), and the next section's own top padding. Sections with a ruled top line hide the same spacing, but an unruled section after a horizontal rail reads as a hole.
+- Prevention: at 390, look at every section boundary that has no rule or colour change, especially after a horizontal scroller. Trim the stacked paddings there until the gap matches the rhythm of the ruled boundaries.
+- Enforced by: log (a generic gap check isn't reliable: the box gap here, 88px, matched normal ruled section spacing)
+- Seen: Ernest Banigon portfolio
+
+### L-040 · 2026-10-08 · pipeline template · build
+- Mistake: the contact page's source notes named `{{fn:form_fields}}` inside an HTML comment. The build expanded the token there too, so the built page carried a second copy of the form's hidden fields, including the Web3Forms access key, inside a shipped comment.
+- Caught by: me (scratch-template test of every form backend, 2026-10-08), before any site used it.
+- Root cause: `render()` expanded tokens everywhere, including comments, and source comments were copied to `dist/`.
+- Prevention: `build.py` strips `<!-- … -->` from pages and partials before expanding tokens, so source notes never ship (smaller pages too). Name a token in a note freely.
+- Enforced by: build (proven: `dist/contact.html` has one trap field and zero comments after the fix).
+
+### L-039 · 2026-10-08 · Macz Arkitektura, Trevor Travis Motors · perf
+- Mistake: both shipped sites were slow on phones. Macz's projects page scored 77 with a 5.3s LCP; its other pages had LCPs of 2.9–4.2s. Trevor Travis's motorcycles page took 4.7s. Two causes: Macz linked Google Fonts (CSS on fonts.googleapis.com, then files on fonts.gstatic.com: ~1.7s render-blocking), and every page served full-size 2000px JPEGs to 412px phones. Macz's header logo was also a 480px PNG drawn at ~42px. Both sites also lacked LocalBusiness JSON-LD, Macz had no DOMAIN (so no share image or canonical URLs), and titles and descriptions ran past what search results show.
+- Caught by: browser-qa (the new Lighthouse run over past sites, 2026-10-08)
+- Root cause: the pipeline had no speed measurement when these sites shipped, and `optimize_images.py` only capped the long edge. Nothing made phone-sized files or flagged a font CDN.
+- Prevention:
+  - `build.py` makes WebP srcsets for every local photo (cached, content-hash names). Parallax photos default to `sizes="max(100vw, 90vh)"`, because they're cover-cropped and drawn wider than a phone screen. That figure was measured on Macz: 461–836px at 360/390 = 59–107vh. 90vh keeps every pick within 0.95–2x of the drawn width.
+  - `tools/self_host_fonts.py` self-hosts Google Fonts as preloaded WOFF2 with an inline `@font-face`.
+  - The first srcset draft used `sizes="100vw"` for everything. The new browser check showed parallax heroes would have downloaded 480px files for photos drawn 540–836px wide, so they'd be blurry. A check that measures the drawn width is what caught it; a build default alone isn't enough.
+- Enforced by: check. `qa.py` warns on a fonts.googleapis.com link (proven: fires on a planted link, quiet on the clean template and both fixed sites). `browser_qa.mjs` warns when a srcset pick is under 0.95x or over 2x the drawn width, with a `sizes` hint (proven: fired on Macz's heroes and Trevor Travis's plates; quiet after the fixes and on the clean template). Plus step (SKILL.md › Direction 3, Build 4, QA loop 2). Result: Macz 94–100 (LCP 1.9–2.9s), Trevor Travis 97–100 (LCP 1.7–2.6s).
+- Seen: Macz Arkitektura, Trevor Travis Motors, Portfolio (2026-10-10: Google Fonts still linked, CLS 0.26; its old tools/ had no font or Lighthouse check, see L-052). Upgraded: the Google Fonts link is now a `qa.py` error, not a warning.
+
+### L-038 · 2026-10-08 · Ernest Mar Banigon portfolio · imagery
+- Mistake: the headshot cut-out shipped with a white halo, light lines round the hair and both arms, on the dark hero. The user circled them: "These white lines are too obvious and doesn't look professional".
+- Caught by: user
+- Root cause: the source was already cut out on white, with a 2–12px light, blurred rim. My script only un-mixed white from a thin band, which kept the rim. I judged the result from full-page screenshots where the portrait is ~400px wide, too small to show a 1px light line.
+- Prevention:
+  - For a cut-out on a dark background, pull the alpha edge in past the measured rim. Recolour any edge pixel lighter than the subject just inside it from the interior, keeping darker texture, then feather 1–2px. See the portfolio's `tools/cutout_headshot.py`.
+  - Inspect every cut-out's edge zoomed in, at 2x display size, composited on the real background.
+- Enforced by: check (`qa.py`, `light_fringe()`: errors when >15% of a transparent image's edge pixels are >30 luminance lighter than the subject 3–9px inside. Calibrated: the halo scored 34%, the fixed cut-out 0%, and 11 logos/icons from past sites 0–5%. Proven against the planted old cut-out.)
+- Seen: Ernest Mar Banigon portfolio
+
+### L-037 · 2026-10-08 · Ernest Mar Banigon portfolio · tooling
+- Mistake: after the redesign, the user's desktop browser kept showing the old opaque headshot. The new cut-out had been saved under the same file name, and `_headers` caches `/assets/img/*` for a week. His phone had no cached copy, so it showed the new one. He said he liked "the cropping of my headshot in the mobile". I took that as a crop request, asked a crop question and shipped a head-and-shoulders crop. Only his second screenshot showed the stale image.
+- Caught by: user
+- Root cause: (1) Long cache on URLs that don't change with their content. The earlier CSS/JS fix (versioned links) left images out. (2) When the user described something my screenshots didn't show, I guessed instead of asking to see his screen.
+- Prevention:
+  - Long-cache only files whose URL changes when they change. When you replace an image, give it a new file name and update its references.
+  - When the user reports something your own screenshots don't show, suspect a stale cache on their device. Ask for a screenshot, or reason from it, before changing the design.
+- Enforced by: check. `tools/deploy.py` has `refuse_stale_cache()`, run by deploy.py (against the last preview URL) and by the portfolio's deploy_live.py. It reads the max-age > 0 paths from `dist/_headers`, fetches each such file from the live URL, and exits if the bytes differ. Proven: a clean build returns []; a planted changed file at a live URL is flagged.
+- Seen: Ernest Mar Banigon portfolio
+
+### L-036 · 2026-10-08 · Ernest Mar Banigon portfolio · mobile
+- Mistake: on phones the burger menu sat right after the brand name instead of at the right edge of the header. The user asked to "move the burger menu on mobile further to the right".
+- Caught by: user
+- Root cause: `.header-cta + .nav-toggle { margin-left: 0 }` handed the push-right job to the CTA. The CTA is `display: none` below 600px, but a hidden element still matches the `+` sibling selector, so neither element pushed right. The screenshots showed it, and I didn't look at the header.
+- Prevention: sibling and `:has()` selectors still match hidden elements, so re-check any layout rule wherever its sibling gets hidden. Look at the mobile header in every 390 screenshot, not just the hero.
+- Enforced by: check (`browser_qa.mjs`: on mobile viewports, error if the visible header menu toggle's right edge is >40px from the viewport edge; proven against the planted bug, 56px/86px at 360/390)
+- Seen: Ernest Mar Banigon portfolio
+
+### L-035 · 2026-10-08 · Ernest Mar Banigon portfolio · tooling
+- Mistake: BRIEF.md said `Deploy host: cloudflare`, but I set the live portfolio up for Netlify. The reason was that a Worker URL would read `<name>.ebanigon-previews.workers.dev`. The user stopped the deploy: "deploy the portfolio in cloudflare not netlify".
+- Caught by: user
+- Root cause: I swapped hosts over a cosmetic URL problem instead of looking for a Cloudflare route that fixes it.
+- Prevention:
+  - Deploy to the host in BRIEF.md. Change it only when the user says so.
+  - When a public (non-preview) site needs a clean Cloudflare address, use a classic Pages project at `<project>.pages.dev`. The workers.dev subdomain is account-wide and named for previews.
+  - Create the project once with `wrangler pages project create <name> --production-branch main --force`. Without `--force`, wrangler 4.148 hands off to Workers autoconfig, which fails with "Could not detect a directory containing static files".
+  - After that, run `wrangler pages deploy dist --project-name <name> --branch main --commit-dirty=true` with no `--force`.
+  - A brand-new `*.pages.dev` name answers 522 for up to a minute, so the post-deploy check retries on 5xx. See the portfolio's `tools/deploy_live.py`.
+- Enforced by: log
+- Seen: Ernest Mar Banigon portfolio
+
+### L-034 · 2026-10-08 · Ernest Mar Banigon portfolio · tooling
+- Mistake: the new `dev/deploy_static.py` (noindex previews for older hand-built sites) hardcoded `npx.cmd` on Windows. mise only shims `npx`, so all three deploys raised FileNotFoundError.
+- Caught by: self (first run)
+- Root cause: wrote a sibling tool from scratch instead of reusing `template/tools/deploy.py`'s `shutil.which("npx")`.
+- Prevention: a new tool that does what an existing one does imports or copies its helpers (the portfolio's `tools/deploy_live.py` imports `deploy.py`'s). Fixed in `dev/deploy_static.py`.
+- Enforced by: log
+- Seen: Ernest Mar Banigon portfolio
+
+### L-033 · 2026-10-07 · Macz Arkitektura · tooling
+- Mistake: a `browser_qa.mjs` fix made in the Macz project copy (wait for scroll handlers before reading the header's colours) never reached `template/tools/`. The template's contrast check then reported false header errors on every page.
+- Caught by: self (while testing the L-031 check against Macz)
+- Root cause: a tool fix made inside a project folder wasn't ported back to the template.
+- Prevention: a fix to a project's `tools/` goes into `template/tools/` in the same session. Diff the two copies (`git diff --no-index`) before handoff.
+- Enforced by: rule (CLAUDE.md › Process & tooling)
+- Seen: Macz Arkitektura
+
+### L-032 · 2026-10-07 · Macz Arkitektura · a11y
+- Mistake: on phones, the quote band's cite line (#e6dccb) ran across the light paper in the photo, at about 1.9:1 against the brighter part.
+- Caught by: browser-qa (the new pixel check from L-031)
+- Root cause: band scrims are left-to-right gradients tuned at 1440. On a phone the text spans the full width and reaches the light end. The closing and CTA bands had a solid mobile scrim; the quote band was missed because the override listed modifier classes instead of the base `.band`.
+- Prevention: under ~700px, every text-on-photo band gets a solid (or near-solid) scrim on the base class, not per modifier. `browser_qa.mjs` measures text on photos and gradients from screen pixels (85th/15th-percentile background) and warns below 4.5:1, or 3:1 for large text.
+- Enforced by: check (`browser_qa.mjs` › pixel contrast, warning) plus rule (CLAUDE.md › Accessibility)
+- Seen: Macz Arkitektura, Macz Arkitektura (redesign, 2026-10-10: the about h1 at 2.32:1 on the pale pencil-on-plan page head; caught by this check before handoff, so the enforcement held; fixed with a darkening layer on every page-head photo)
+
+### L-031 · 2026-10-07 · Macz Arkitektura · a11y
+- Mistake: the logo-stroke divider (an inline SVG, `currentColor`) stayed dark brown on the dark drafting-hands photo band, at about 1.1:1. The user had to circle it in a screenshot.
+- Caught by: user
+- Root cause: the light-ink override for dark surfaces was keyed to one class (`.on-night`). The photo bands, page heads and hero are dark surfaces too, but they don't carry that class. QA couldn't catch it: the contrast check only read CSS colours of *text* and skipped anything over a photo or gradient, so icons and dividers were never checked anywhere.
+- Prevention: every dark surface (night sections, photo bands, page heads, hero) sets light ink for text **and** graphics. Use one shared selector or token, not a single class. `browser_qa.mjs` now hides every single-colour inline SVG, screenshots the viewport, and compares the SVG's ink with the pixels behind it; below 3:1 (WCAG 1.4.11) is an error. Proven: the restored bug fails at 360/390/1440; the fixed Macz site passes with no false positives.
+- Enforced by: check (`browser_qa.mjs` › pixel contrast, error) plus rule (CLAUDE.md › Accessibility)
+- Seen: Macz Arkitektura
+
+### L-030 · 2026-10-07 · Macz Arkitektura · tooling
+- Mistake: passed a Git-Bash `/c/...` path to Windows Python (`Image.save`), which raised FileNotFoundError.
+- Caught by: self
+- Root cause: mixed POSIX and Windows path styles across the two shells.
+- Prevention: pass Windows-style paths (`C:/...`) to Python, even when calling it from Bash.
+- Enforced by: log
+- Seen: Macz Arkitektura
+
+### L-029 · 2026-10-07 · Macz Arkitektura · imagery
+- Mistake: two photos from one shoot, and two near-identical renders, were placed as if they were different images: groundbreaking shovels plus groundbreaking helmets, and two renders of the same dining room from almost the same angle.
+- Caught by: reviewer (finish reviewer)
+- Root cause: the no-repeat rule was checked by filename only.
+- Prevention: the image allocation notes each photo's shoot and angle. Near-duplicates and same-shoot pairs count as repeats unless they're shown together as one set.
+- Enforced by: rule (CLAUDE.md › Imagery, sharpened) plus step (VISUAL-REVIEW.md › Imagery)
+- Seen: Macz Arkitektura
+
+### L-028 · 2026-10-07 · Macz Arkitektura · imagery
+- Mistake: used a client presentation board that carries a column of third-party brand logos (fast-food and coffee chains), which reads as an implied client list or endorsement.
+- Caught by: critique
+- Root cause: intake catalogued the board as "brand logos and text" but it was slotted anyway.
+- Prevention: third-party logos on any image (boards, signage, renders) read as endorsements. Crop them out or skip the image; intake marks such images "crop before use".
+- Enforced by: step (VISUAL-REVIEW.md › Imagery; SKILL.md › Intake 1)
+- Seen: Macz Arkitektura
+
+### L-027 · 2026-10-07 · Pipeline (Cloudflare deploy) · tooling
+- Mistake: a Python edit to `deploy.py` was sent through a Bash heredoc. `\\n` inside the f-strings arrived as real newlines and broke the file (SyntaxError).
+- Caught by: self (`py_compile`)
+- Root cause: ignored the existing rule (CLAUDE.md › Process & tooling: big helpers go in files, not heredocs) because the edit "looked small".
+- Prevention: edit source files with Edit/Write. Shell-driven Python only from a script file written with Write. Always `py_compile` or run the file after any scripted edit.
+- Enforced by: rule (CLAUDE.md › Process & tooling, sharpened); since Macz also step (SKILL.md › Operating rules: scripted edits)
+- Seen: Pipeline (Cloudflare deploy), Macz Arkitektura. Here a CSS search-and-replace ran as Python in a Bash heredoc (no damage), and two stray empty heredocs were sent later. The rule alone didn't hold, so it is now an Operating rule in SKILL.md: multi-replacement edits go in a script written with Write that exits unless each match count is 1, then `py_compile`/rebuild. Seen again on the portfolio (2026-10-08): a Python one-liner in a Bash heredoc turned `r"<svg\b"` into `r"<svg<backspace>"`, so the skill icons silently lost their class and rendered huge. It compiled fine, so `py_compile` can't catch this kind. **Now enforced by a check:** `tools/qa.py` errors on any control character (`\x00-\x08`, `\x0b`, `\x0c`, `\x0e-\x1f`, `\x7f`) in `_src/`, `assets/` and `tools/` (template and project). Seen again 2026-10-08 (Macz/Trevor Travis perf pass): a two-string edit to `template/_src/build.py` went through `python - <<'EOF'` in Bash. No damage: `py_compile` passed, and a grep confirmed both strings. Every other edit that session used a script file with match-count checks. The rule still slips under time pressure, so the next step up is a PreToolUse hook that blocks `python - <<` / `python -c` edits in Bash (offered to the user). Seen again on Gadget Zone (2026-10-08), three times: empty heredocs (`cat > /dev/null <<'X'`, `cat > file.py <<'EOF'`, `python - <<'EOF'`) sent by reflex. No damage, since nothing was written to the project, but it shows the habit fires even when no edit is intended. The hook was offered to the user again at handoff. **Now enforced by a hook (user-approved 2026-10-08):** `~/.claude/hooks/block-heredoc.mjs`, a PreToolUse hook on Bash in `~/.claude/settings.json`, blocks any shell heredoc that has a terminator line (exit 2, with a message pointing to Write/Edit). It allows `git commit` messages, `<<<` here-strings and a quoted `<<`. It passed 10 test cases and blocked a live heredoc. Seen again on the portfolio (2026-10-10): a `sed` replacement on a test script mangled a Windows path whose backslashes it read as escapes. It was caught at once and fixed with Edit, and the hook doesn't cover `sed`. The rule stands: path- or escape-bearing edits go through Edit or a Write-ed script, never `sed`. Seen again the same day (pipeline, design-library watcher), twice. A `sed -i` dropped the backslash from `<library>\inspiration` in a script comment. Then an inline `powershell -Command "... \$d ..."` sent through Bash lost its loop variable to the double escaping, so `Move-Item "_temp\learn\$d"` moved the whole `_temp\learn` folder (only test files, no harm). **Upgraded to a check:** the hook now also blocks `sed -i`/`--in-place` and `perl -i` (10 test cases: in-place blocked, read-only `sed -n`/pipes allowed). Multi-statement PowerShell goes in a `.ps1` written with Write and run by path, never inline through Bash quoting. Workspace rename (2026-10-10): a multi-file edit script wrote 8 files, then stopped on the 9th (a memory file's description was quoted, so the pattern missed) and left the set half-edited. Multi-file edit scripts check every match in every file first and write nothing unless all pass. Seen again on the Macz re-run (2026-10-10): a two-file `sed -i` path swap. The hook blocked it before anything ran, and it was redone with Edit. The check held, so no upgrade.
+
+### L-026 · 2026-10-07 · Pipeline (Cloudflare deploy) · tooling
+- Mistake: wrote the Cloudflare deploy path against the classic Pages CLI (`pages project create` / `pages deploy`). Wrangler 4.148 delegates that to Workers autoconfig, which wrote a `wrangler.jsonc` with an invalid name made from the folder name, and the deploy failed. The next run's first Workers deploy then auto-registered the account-wide workers.dev subdomain from the same mangled name (`revor--ravis--otors--ebsite`).
+- Caught by: self (live test deploy)
+- Root cause: assumed the CLI's current behaviour from memory instead of checking it; didn't foresee account-level side effects of a first deploy.
+- Prevention: deploy as a static-assets Worker from a config `deploy.py` writes to `.pipeline/wrangler.jsonc` (no autoconfig). Never deploy over a Worker the tool didn't create. Warn when wrangler auto-registers the account subdomain so the user can rename it. Before wiring a third-party CLI into the pipeline, test it live in a scratch copy, and set account-wide settings before the first deploy.
+- Enforced by: check (`template/tools/deploy.py`); step (`SKILL.md` › Preview deploy)
+- Seen: Pipeline (Cloudflare deploy)
+
+### L-025 · 2026-10-07 · Trevor Travis Motors · process
+- Mistake: retyped the brief's Instagram URL in the intake question and typo'd the handle ("adriachristophertorda"). The site used the correct URL, but the user was shown a wrong one.
+- Caught by: self
+- Root cause: contact values were retyped instead of copied.
+- Prevention: copy contact values (URLs, handles, phone, email) straight from the brief; never retype them.
+- Enforced by: rule (CLAUDE.md › Pipeline & questions)
+- Seen: Trevor Travis Motors
+
+### L-024 · 2026-10-07 · Trevor Travis Motors · mobile
+- Mistake: the installment table relied on sideways scroll at 390px, so figures sat cut mid-number at the viewport edge. Separately, long `nowrap` spec values ("OR/CR, registered to October 2027") overflowed at 360px.
+- Caught by: self (screenshot); browser-qa (the overflow)
+- Root cause: `overflow-x: auto` was treated as a fix for wide tables. Long values were put under `nowrap` without checking their length.
+- Prevention: stack wide tables into per-row blocks on phones (`td::before { content: attr(data-label) }`). Keep `nowrap` spec values under ~22 characters.
+- Enforced by: check (`browser_qa.mjs`: a sideways scroller holding text at 360/390 = warning. `nav` and scroll-snap rails are exempt as deliberate patterns. Proven on a planted table, the clean template, IronCity, Weknz and this site). The overflow check already caught the spec values.
+- Seen: Trevor Travis Motors
+
+### L-023 · 2026-10-07 · Trevor Travis Motors · mobile
+- Mistake: the desktop nav labels (six items, phone and CTA) wrapped onto two lines at 1440px.
+- Caught by: self (screenshot)
+- Root cause: no `white-space: nowrap` on nav links, and labels too long for the bar.
+- Prevention: nav links are `nowrap`. Shorten labels, hide "Home" when the wordmark links home, and move the hamburger breakpoint up until one line fits.
+- Enforced by: check (`browser_qa.mjs`: a visible `header nav a` on more than one line = error at every viewport. Proven on a planted defect, the clean template, IronCity, Weknz and this site)
+- Seen: Trevor Travis Motors
+
+### L-022 · 2026-10-07 · Trevor Travis Motors · imagery
+- Mistake: a numbered callout on the hero bike said "chain and sprocket" but pointed at the exhaust. The photo shows the bike's right side, and the chain is on the left.
+- Caught by: self (a % grid overlay on the full-size photo)
+- Root cause: callout positions and subjects were guessed from a thumbnail.
+- Prevention: before writing callout or annotation copy, lay a % grid over the full-size photo and confirm each pin sits on a part the photo actually shows.
+- Enforced by: step (`.pipeline/VISUAL-REVIEW.md` › Imagery) plus rule (CLAUDE.md › Imagery)
+- Seen: Trevor Travis Motors
+
+### L-021 · 2026-10-07 · Trevor Travis Motors · tooling
+- Mistake: nested a token inside a helper argument (`{{fn:ext|{{MAPS_URL}}|…}}`). The token regex stops at the first `}}`, so the helper got a truncated argument and the build crashed.
+- Caught by: self (build traceback)
+- Root cause: the template syntax doesn't nest, and nothing said so.
+- Prevention: helpers read BIZ themselves. Never pass a `{{TOKEN}}` as a helper argument.
+- Enforced by: check (`build.py`: warns "token nested inside helper args" and skips the helper call instead of crashing. Proven on a planted nested token; quiet on the template and this site)
+- Seen: Trevor Travis Motors
+
+### L-020 · 2026-10-07 · Trevor Travis Motors · tooling
+- Mistakes in the pipeline's own tools, all found while running them:
+  - `browser_qa.mjs` full-page screenshots showed empty plates: `loading="lazy"` images never loaded during capture.
+  - `optimize_images.py DIR` crashed on a relative DIR (`relative_to(ROOT)` on an unresolved path).
+  - Wikimedia Commons returned 429 for back-to-back downloads.
+- Caught by: self
+- Root cause: the tools had only been run against the template's own eager images, absolute paths and single downloads.
+- Prevention: `browser_qa.mjs` strips `loading=lazy`, re-sets `src` and awaits `decode()` before checks and shots. `optimize_images.py` resolves its path. The new `tools/fetch_commons.py` (added to the template) waits 4s between files, skips existing ones, and records author and licence for CC BY-SA credits. A blank image in a `-full` shot is a tool bug, not a site bug.
+- Enforced by: check (the fixes live in `template/tools/`)
+- Seen: Trevor Travis Motors
+
+### L-019 · 2026-10-07 · IronCity, Trevor Travis Motors · tooling
+- Mistakes:
+  - The first preview deploy returned 401: new Netlify team sites default to team login (`sso_login`). This was already in L-000 from IronCity, where it was a manual fix.
+  - `deploy.py` also said "not logged in" when the CLI was logged in, because `netlify status` exits 1 in an unlinked folder too.
+- Caught by: `deploy.py`'s public check (401); self (login)
+- Root cause: the 401 was enforced only as a rule ("check public access") and a printed hint. Login was inferred from the exit code.
+- Prevention: `deploy.py` treats a missing `Email:` line as logged out. On a 401 it switches `sso_login` off for the site it just deployed (the brief authorises a public noindex preview) and re-checks. Seen twice, so it went from rule to automation.
+- Enforced by: check (`template/tools/deploy.py`)
+- Seen: IronCity (L-000), Trevor Travis Motors
+
+### L-018 · 2026-10-07 · Trevor Travis Motors · tooling
+- Mistake: two tool scripts crashed printing non-ASCII text on the Windows cp1252 console:
+  - `fetch_commons.py` crashed on a Japanese author name and lost the credit rows for files it had already saved.
+  - `deploy.py` crashed printing its own "→" hint.
+- Caught by: self
+- Root cause: `print()` used the console's default encoding.
+- Prevention: every tool script calls `sys.stdout.reconfigure(encoding="utf-8", errors="replace")` first, and writes its data before printing.
+- Enforced by: rule (CLAUDE.md › Process & tooling), plus the fix in both template scripts
+- Seen: Trevor Travis Motors (twice in one project)
+
+### L-017 · 2026-10-07 · Pipeline (critique mining) · tooling
+- Mistake: new checks passed the planted-defect and clean-template tests but gave false positives on the real IronCity and Weknz sites:
+  - the logo counted as a repeated photo;
+  - dropdown links (`page.html#section`) were read as one link with seven names;
+  - filter and sort selects;
+  - deliberate icon-above-label stacks (flex column or block `<h3>`) read as a "dropped icon";
+  - an absolutely positioned select chevron;
+  - outline numerals (`-webkit-text-stroke`) measured at 1:1;
+  - the header tap-to-call was judged by the *first* `tel:` link, which was the hidden desktop number.
+- Caught by: self (ran the new checks over copies of both shipped sites)
+- Root cause: the same person wrote the test fixtures and the checks, so the fixtures only held markup the checks expected.
+- Prevention: a new or changed check must:
+  1. fire on a planted defect;
+  2. stay quiet on the clean template;
+  3. stay quiet on real markup. Run `dev/qa_real_site.py` over a finished past site and judge every hit.
+  Second tooling false-positive lesson (see L-001), so this is now a step.
+- Enforced by: step (SKILL.md › Handoff › Lessons), plus the fixes in `qa.py` and `browser_qa.mjs`
+- Seen: Pipeline setup (L-001), Pipeline (critique mining)
+
+### L-016 · 2026-10-07 · IronCity, Weknz · process
+- Mistake: critique findings were only partly fixed before handoff. Running the new checks over the *shipped* sites still finds the following.
+  - IronCity: ~20 CTA labels (Get a Quote, Get a free quote, Plan my build, Boost my build…), the make-name marquee, 30 of 66 headings under a kicker, 50 icon-led cards.
+  - Weknz: the "Not sure yet" default select, the marquee, six photos used 2–3×, and a form with no next-steps line.
+- Caught by: self (new QA run over the past sites)
+- Root cause: fixes were confirmed by eye and only for the instances the critique named, not the whole class of problem.
+- Prevention: every critique P1/P2 gets a line in `PROJECT.md` › Decisions, either "fixed: how" or "declined: why". Fix the class of problem sitewide, then re-run QA and the critique to confirm.
+- Enforced by: step (SKILL.md › QA loop 4) plus the checks below
+- Seen: IronCity, Weknz
+
+### L-015 · 2026-10-07 · IronCity, Weknz · identity
+- Mistake: category-template structure. Kickers or pills above almost every heading, rows of icon tiles (IronCity 9 stacks, Weknz 20), a brand or make-name marquee, a seal with no pause control. Weknz also kept a template site's ("Lawnx") structure and personality.
+- Caught by: critique (both)
+- Root cause: started from category patterns instead of the business's own story. The CLAUDE.md rule alone didn't stop it in the first draft.
+- Prevention: no eyebrow over most headings, no icon-tile rows, no marquee or ticker (auto-motion also needs a pause control), never reuse another site's structure. Prove the business with its real work, photos and specifics.
+- Enforced by: check (`qa.py`: eyebrow ratio ≥ 40% = error, ≥ 6 icon-led cards = error, marquee element or endless translate animation = error; `ALLOW_PATTERNS` when a client asks for one), plus rule
+- Seen: IronCity, Weknz
+
+### L-014 · 2026-10-07 · IronCity, Weknz · identity
+- Mistake: one action, many labels. IronCity had 9+ CTA labels, all pointing to one form, and ~7 solid-red buttons on the homepage. Weknz had five labels for one action.
+- Caught by: critique (both)
+- Root cause: wrote a "clever" label per section. The old check only compared `.btn-primary` labels.
+- Prevention: any button that goes to the primary CTA's page uses the primary CTA label. Anything else is a text link.
+- Enforced by: check (`qa.py`: error, upgraded from a warning)
+- Seen: IronCity, Weknz
+
+### L-013 · 2026-10-07 · IronCity, Weknz · identity
+- Mistake: coloured glows. IronCity had red halos; Weknz had a gold glow on `.btn--cta:hover`.
+- Caught by: critique (both), user (IronCity)
+- Root cause: used glow as "premium" decoration. The radial-gradient check missed box-shadow glows.
+- Prevention: shadows are neutral elevation only.
+- Enforced by: check (`qa.py`: a saturated, large-blur box-shadow is an error; `ALLOW_PATTERNS["glow"]` if the client asks)
+- Seen: IronCity, Weknz
+- **Superseded 2026-10-12 (user):** glows are allowed on any site as long as text and images keep their contrast. The qa.py glow error and radial-gradient warning were removed. `browser_qa.mjs` now measures text over glows on screen (gradients, blurred layers, `::before`/`::after` glows, box-shadow halos within reach) and errors below 4.5:1 (3:1 for large text). Tested against planted bright glows (caught) and a dim violet one (passed). Still avoid glow as reflexive "premium" decoration on every card; use it where it serves the identity.
+
+### L-012 · 2026-10-07 · IronCity, Weknz · forms
+- Mistake: no reassurance at the high-stakes moment. Neither site said what happens after you send the form or how fast anyone replies. IronCity also had no face and no next steps. Weknz's mailto submit never confirmed a send.
+- Caught by: critique (both)
+- Root cause: the form was treated as plumbing, not as the conversion moment.
+- Prevention: every contact form has a `[data-next-steps]` line above submit: who replies, how fast, what happens next.
+- Enforced by: check (`qa.py`: a contact form without `[data-next-steps]` = error) plus template (`NEXT_STEPS` in `site_config.py`)
+- Seen: IronCity, Weknz
+
+### L-011 · 2026-10-07 · Weknz · forms
+- Mistakes:
+  - The form used `action="mailto:"`: it fails silently and pushes the visitor into a mail app.
+  - The phone field accepted letters.
+  - `og:image` was relative, so social previews broke. IronCity shipped this too.
+- Caught by: critique
+- Root cause: shortcuts taken to avoid a form backend; meta tags copied without the domain.
+- Prevention: never use mailto forms; use FORM_ENDPOINT or honest demo mode. Phone fields are `type="tel"` with a pattern. og:image must be an absolute URL.
+- Enforced by: check (`qa.py`, all three) plus template (`contact.html` phone pattern, escaped for the regex `v` flag)
+- Seen: Weknz, IronCity (og:image)
+
+### L-010 · 2026-10-07 · IronCity, Weknz · forms
+- Mistake: qualifying selects defaulted to an answer the visitor never gave. IronCity's hero finder sent "Full restoration / Classic / Not sure yet". Weknz's "Interested in" starts on "Not sure yet", and the shipped site still does.
+- Caught by: critique (both)
+- Root cause: "Not sure yet" feels like a neutral default, but it submits as a real answer.
+- Prevention: start on an empty "Choose…" option. Filter and sort controls inside `role="search"` forms are exempt.
+- Enforced by: check (`qa.py`, already present; refined so search filters don't trip it)
+- Seen: IronCity, Weknz
+
+### L-009 · 2026-10-07 · IronCity, Weknz · mobile
+- Mistake: homepage overload. IronCity: 9 sections, ~11,700px tall on a phone. Weknz: 13 sections, ~14,000px, benefits said four times, the gallery on three pages, a CTA after the contact form.
+- Caught by: critique (both)
+- Root cause: added sections to look complete instead of choosing what this visitor needs.
+- Prevention: homepage of about 8 sections. Each idea appears once on the site, and no section is repeated across pages.
+- Enforced by: check (`browser_qa.mjs`: homepage over 10,000px at 390 = error, over 8,000px or more than 9 sections = warning; `qa.py`: 8+ identical words in the `<main>` of two or more pages = warning, `ALLOW_REPEAT_TEXT` for deliberate repeats), plus step (SKILL.md › Content 1, Content 2 fact allocation)
+- Seen: IronCity, Weknz, Macz Arkitektura. Here the height rule held, but the same facts were retold page by page: the Trends quote, "MACZimum", "nine days" ×5, the TV-bezel detail ×4, the Linya + Maniobra credit ×6 (caught by finish reviewer and critique). Root cause: every page was written to stand alone from one short Facts list, with no fact→page allocation. Upgrade: the repeated-wording check in `qa.py` (proven on a planted repeat, quiet on the clean template, and every hit on TTM, Weknz and IronCity judged a real repeat apart from address lines in plain `<p>`, which the warning now says to mark up as `<address>`), plus a Fact allocation list in PROJECT.md. Macz redesign (2026-10-10): the first draft had 9 homepage sections (a separate trust strip); the browser-qa warning caught it before handoff and the facts merged into the closing panel.
+
+### L-008 · 2026-10-07 · IronCity, Weknz · copy
+- Mistake: buyer questions left unanswered.
+  - IronCity: transit insurance, storage and deposits.
+  - Weknz: price range, delivery, lead time, warranty, and no address.
+- Caught by: critique (both)
+- Root cause: copy was written from what the business does, not from what a buyer needs before contacting them.
+- Prevention: the Content phase lists the buyer's pre-contact questions (price or how pricing works, timeline, delivery or logistics, warranty, where to find them, what happens after contact) and answers each one on the site. Client mode uses `data-todo` for anything unknown.
+- Enforced by: step (SKILL.md › Content 2)
+- Seen: IronCity, Weknz
+
+### L-007 · 2026-10-07 · IronCity, Weknz · copy
+- Mistake: copy that misleads or contradicts itself.
+  - IronCity: "Free quote" vs Time & Materials billing in the FAQ; struck-through "was" prices on a craftsman shop.
+  - Weknz: "0% Sales commission" reads like 0% financing; review headlines promised things the reviews didn't say; "We Rock Your Weekends!" was the real tagline but went unused.
+- Caught by: critique (both), user (IronCity pricing)
+- Root cause: claims were written section by section and never read as a skeptical buyer, or checked against each other.
+- Prevention: before QA, do one honesty pass. Read every number and claim as a skeptical buyer, check pricing and process claims agree across pages, make review headlines quote the review, and use the client's own tagline.
+- Enforced by: rule (CLAUDE.md › Copy & content) plus step (SKILL.md › Content 2)
+- Seen: IronCity, Weknz, Trevor Travis Motors. Here a page said the ZX-6R was "cash or bank financing only" while Home said every bike can go on installment. The honesty-pass step caught it before QA, so the step held and no upgrade was needed. Macz Arkitektura (real firm, sample mode): a card said Macz designs "two-storey residences", but the only one was designed by another firm and only built by Macz; owner quotes were paraphrased from memory; process promises ("one contract", "we agree the schedule") weren't in Facts (caught by critique). Upgrade, step earlier (SKILL.md › Intake 2 and Content 2): save captions and reviews verbatim to a sources file at intake, copy quotes from it (never retype), record each project's credit line (designed by / built by) in Facts and check every "we designed/built X" against it, and cut any process promise not in Facts.
+
+### L-006 · 2026-10-07 · IronCity, Weknz · imagery
+- Mistakes:
+  - Stock contradicted the product. Weknz: wicker and wire chairs for a poly-furniture maker. IronCity: a studio E-Type and discounted modern Mustangs for a classic-craft shop.
+  - Real photos were buried. Weknz's showroom lot sat under a heavy overlay, and the hero was over-darkened.
+  - IronCity's red headline collided with a red car.
+- Caught by: critique (both)
+- Root cause: picked stock by mood rather than by what it literally shows, and darkened images until the text passed contrast.
+- Prevention: the image allocation records what each photo *shows* (product type and material, era, locale) and whether that matches the business. Real photos lead and stay visible. Fix text-on-photo contrast with placement or a scrim behind the text, not by darkening the whole image.
+- Enforced by: step (SKILL.md › Content 3, VISUAL-REVIEW.md › Imagery)
+- Seen: IronCity, Weknz, Macz Arkitektura. Here the one-line hero H1 ran past the left scrim onto the render's MACZ watermark; the VISUAL-REVIEW pass caught it before the critique (fixed with `max-width: 9ch`). The step held, so no upgrade is needed.
+
+### L-005 · 2026-10-07 · Weknz · identity
+- Mistake: the palette ignored the logo. The site was green-dominant while the logo is sky and sand (`--sky-400` was defined but unused). The "beachy family showroom" voice was absent, and the Amish craft appeared only as icon tiles.
+- Caught by: critique
+- Root cause: the direction started from the category (outdoor means green) instead of the brand's own assets.
+- Prevention: the Direction phase samples the logo's colours and the client's tagline and voice first. The palette starts there, and any departure is logged in Decisions.
+- Enforced by: step (SKILL.md › Direction 1) plus rule
+- Seen: Weknz
+
+### L-004 · 2026-10-07 · IronCity · forms
+- Mistake: dead-end features. Save/bookmark toggles had nowhere to view saved cars. The demo newsletter claimed success.
+- Caught by: critique
+- Root cause: added interactive features for richness without building where they lead.
+- Prevention: every interactive feature completes its loop (a saved-items view, a real endpoint) or isn't built. Demo modes say they are demos.
+- Enforced by: rule (CLAUDE.md › Copy & content)
+- Seen: IronCity
+
+### L-003 · 2026-10-07 · IronCity, Weknz · a11y / visual polish
+- Mistakes (each minor, collected so they don't recur):
+  - IronCity: the footer used two names for one page ("Exotic Inventory" and "Cars For Sale"); an outline numeral "04" looked broken; a 10-car grid left 2 orphans; an empty column sat under the offer.
+  - Weknz: external-link arrows on internal and tel links; a stats row floating left; a desktop dropdown that couldn't close via its button (focus-within); the top-bar hours contradicted themselves without JS; small decorative numerals at 3.3:1.
+- Caught by: critique (both)
+- Root cause: no checklist for these details.
+- Prevention:
+  - One name per destination.
+  - Grids fill their rows at every breakpoint.
+  - Icons mean what they say: ↗ only on external links.
+  - JS-dependent status needs a truthful no-JS fallback.
+  - Menus close with their own button and Escape.
+  - Decorative numerals still need 3:1.
+- Enforced by: check (`qa.py`: one nav destination under several names = warning; `browser_qa.mjs` contrast already covers the numerals) plus step (VISUAL-REVIEW.md); since Macz also step (SKILL.md › Direction 2: check the display font's figures; Build 2: set row spans when a grid mixes wide and tall items)
+- Seen: IronCity, Weknz, Macz Arkitektura. Here the display serif Marcellus rendered "01" like "OI" (caught by critique), and the first gallery draft left a half-empty mosaic row (caught by the visual pass). The numeral miss means the VISUAL-REVIEW line came too late: the font's figures are now checked when the type is chosen.
+
+### L-002 · 2026-10-07 · Pipeline setup · tooling
+- Mistake: the build and `qa.py` reported each empty placeholder once per page (40+ lines for 10 missing values), which buried the real errors.
+- Caught by: self (test run)
+- Root cause: reported per occurrence instead of per distinct problem.
+- Prevention: QA output groups findings by distinct problem and lists the affected pages on one line. A report should be readable in 30 seconds.
+- Enforced by: check (`_src/build.py` unresolved map, `tools/qa.py` empty_tokens)
+- Seen: Pipeline setup
+
+### L-001 · 2026-10-07 · Pipeline setup · tooling
+- Mistake: `browser_qa.mjs` flagged the hidden mobile nav panel as horizontal overflow. It was a false positive: position:fixed elements size to the viewport the real overflow had already widened.
+- Caught by: self (planted-defect test)
+- Root cause: the offender scan didn't skip invisible or fixed-position elements.
+- Prevention: overflow offender lists skip hidden and fixed elements. Validate every new check against a planted defect *and* a clean page before trusting it.
+- Enforced by: check (`tools/browser_qa.mjs` overflow filter)
+- Seen: Pipeline setup
+
+### L-000 · 2026-10 · IronCity Rods & Customs (and earlier sites) · all areas
+- The original lessons (repeated photos, plates behind hero text, cropped cut-outs, glows, template patterns, discount positioning, CTA sprawl, mobile wrapping and overflow, select defaults, "the null" prefill, contrast on raised cards, layout-property animation, Netlify noindex and 401) were recorded directly as rules in `~/.claude/CLAUDE.md` › Website design & build rules.
+- Enforced by: rule. Most are also checks in `qa.py` and `browser_qa.mjs` as of 2026-10-07.
+- Seen: IronCity. Several repeated on Weknz; see L-005 to L-016.
+- `impeccable detect` false positives seen on both sites (note them, don't chase):
+  - cramped-padding on full-bleed bands;
+  - broken-image on JS-filled dialog images;
+  - hover-state contrast;
+  - `overflow-x` on body;
+  - wide-tracking on small caps;
+  - dark-glow on neutral elevation shadows;
+  - marquee when it already has a reduced-motion fallback (but see L-015).

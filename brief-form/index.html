@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New website brief</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f6f50'/%3E%3Cpath d='M9 10h14M9 16h14M9 22h8' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f3f3f1;
+  --surface: #ffffff;
+  --surface-2: #f7f7f5;
+  --border: #e2e2de;
+  --border-strong: #c9c9c3;
+  --text: #1b1b1a;
+  --muted: #5d5d58;
+  --accent: #1f6f50;
+  --accent-hover: #185a41;
+  --accent-soft: #e5f1eb;
+  --accent-text: #ffffff;
+  --danger: #b3261e;
+  --focus: #1f6f50;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 2px 8px rgba(0,0,0,.04);
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1b1b1a;
+    --surface: #252524;
+    --surface-2: #2c2c2b;
+    --border: #383836;
+    --border-strong: #4a4a47;
+    --text: #ededeb;
+    --muted: #acaca6;
+    --accent: #4fb889;
+    --accent-hover: #63c799;
+    --accent-soft: #1f3a2e;
+    --accent-text: #0c1f17;
+    --danger: #f2a49e;
+    --focus: #63c799;
+    --shadow: 0 1px 2px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, textarea { font: inherit; color: inherit; }
+
+/* ---------- header ---------- */
+.top {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 28px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.top h1 { font: 600 18px/1.25 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; margin: 0; }
+.top .folder { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top .titles { min-width: 0; flex: 1; }
+.status { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; white-space: nowrap; }
+.status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border-strong); flex: none; }
+.status[data-state="saved"] .dot { background: var(--accent); }
+.status[data-state="saving"] .dot { background: #c98a12; }
+.status[data-state="error"] { color: var(--danger); }
+.status[data-state="error"] .dot { background: var(--danger); }
+
+/* ---------- layout ---------- */
+.layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px;
+  max-width: 1180px; margin: 0 auto; padding: 24px 28px 48px;
+}
+.side { position: sticky; top: 86px; align-self: start; display: grid; gap: 16px; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; padding: 20px 16px 40px; }
+  .side { position: static; }
+  .top { padding: 12px 16px; }
+}
+
+.intro { margin: 0 0 18px; color: var(--muted); max-width: 62ch; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 22px 24px; margin-bottom: 16px;
+}
+.card h2 { font: 600 15px/1.3 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; margin: 0 0 4px; }
+.card .sub { color: var(--muted); margin: 0 0 18px; font-size: 13px; }
+
+/* ---------- fields ---------- */
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; }
+.grid .wide { grid-column: 1 / -1; }
+@media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+.field { display: grid; gap: 6px; align-content: start; }
+.field label, .label { font-weight: 600; font-size: 13px; }
+.hint { color: var(--muted); font-weight: 400; font-size: 12.5px; }
+input[type=text], input[type=tel], input[type=email], input[type=url], textarea {
+  width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+  border-bottom-color: var(--border-strong); border-radius: 6px; padding: 8px 11px; outline: none;
+  transition: border-color .12s, background-color .12s;
+}
+textarea { resize: vertical; min-height: 64px; field-sizing: content; max-height: 260px; }
+input:hover, textarea:hover { border-color: var(--border-strong); }
+input:focus, textarea:focus { background: var(--surface); border-color: var(--focus); box-shadow: inset 0 -1px 0 var(--focus); }
+::placeholder { color: var(--muted); opacity: .75; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+input:focus-visible, textarea:focus-visible { outline: none; }
+
+/* project type choice */
+.choice { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 520px) { .choice { grid-template-columns: 1fr; } }
+.choice label {
+  display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: start;
+  padding: 13px 14px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+  background: var(--surface-2); transition: border-color .12s, background-color .12s;
+}
+.choice label:hover { border-color: var(--border-strong); }
+.choice input { margin: 3px 0 0; accent-color: var(--accent); grid-row: span 2; }
+.choice strong { font-weight: 600; }
+.choice span { color: var(--muted); font-size: 12.5px; }
+.choice .nw { white-space: nowrap; font-size: inherit; }
+.choice label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+
+/* chips */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  border: 1px solid var(--border-strong); background: var(--surface); border-radius: 999px;
+  padding: 3px 12px; font-size: 12.5px; cursor: pointer; white-space: nowrap;
+}
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+
+/* switches */
+.rows { display: grid; }
+.row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: center;
+  padding: 13px 0; border-top: 1px solid var(--border);
+}
+.row:first-child { border-top: 0; padding-top: 0; }
+.row .label { font-size: 13.5px; }
+.row .hint { grid-column: 1; }
+.switch { position: relative; width: 40px; height: 22px; flex: none; grid-row: span 2; }
+.switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+.switch .track {
+  position: absolute; inset: 0; border-radius: 999px; border: 1px solid var(--border-strong);
+  background: var(--surface-2); transition: background-color .15s, border-color .15s;
+}
+.switch .knob {
+  position: absolute; top: 5px; left: 5px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--muted); transition: transform .15s, background-color .15s;
+}
+.switch input:checked ~ .track { background: var(--accent); border-color: var(--accent); }
+.switch input:checked ~ .knob { transform: translateX(18px); background: var(--accent-text); }
+.switch input:focus-visible ~ .track { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.seg {
+  display: inline-flex; padding: 3px; gap: 2px; border-radius: 8px; background: var(--surface-2);
+  border: 1px solid var(--border); grid-row: span 2;
+}
+.seg button {
+  border: 0; background: transparent; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  color: var(--muted); white-space: nowrap;
+}
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.12); font-weight: 600; }
+.seg[aria-disabled="true"] { opacity: .5; pointer-events: none; }
+
+/* ---------- side: files ---------- */
+.drop {
+  display: grid; place-items: center; text-align: center; gap: 6px;
+  padding: 26px 16px; border: 1.5px dashed var(--border-strong); border-radius: 8px;
+  background: var(--surface-2); cursor: pointer; transition: border-color .12s, background-color .12s;
+}
+.drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop svg { color: var(--accent); }
+.drop strong { font-weight: 600; }
+.drop span { color: var(--muted); font-size: 12.5px; }
+.files { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+.files:empty { display: none; }
+.file {
+  position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden; background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.file img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.file .ext {
+  position: absolute; inset: 0; display: grid; place-items: center; font-weight: 700; font-size: 12px;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
+}
+.file .name {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 4px; font-size: 11px; color: #fff;
+  background: linear-gradient(transparent, rgba(0,0,0,.72)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.file .rm {
+  position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: 0;
+  background: rgba(0,0,0,.6); color: #fff; cursor: pointer; display: grid; place-items: center;
+  opacity: 0; transition: opacity .12s;
+}
+.file:hover .rm, .rm:focus-visible { opacity: 1; }
+.file.uploading { opacity: .55; }
+.file-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; font-size: 12.5px; color: var(--muted); }
+.link { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.link:hover { text-decoration: underline; }
+
+/* ---------- side: start ---------- */
+.start p { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+.btn {
+  width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 0; border-radius: 8px; padding: 11px 16px; font-weight: 600; font-size: 14.5px; cursor: pointer;
+  background: var(--accent); color: var(--accent-text); transition: background-color .12s;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:disabled { opacity: .6; cursor: default; }
+.kbd { font-size: 12px; color: var(--muted); text-align: center; margin-top: 8px; }
+@media (max-width: 900px) {
+  /* single column: keep Start reachable as a bottom bar */
+  .layout { padding-bottom: 96px; }
+  .start {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; margin: 0; border-radius: 0;
+    border-width: 1px 0 0; padding: 12px 16px; display: flex; align-items: center; gap: 16px;
+  }
+  .start h2, .start .kbd { display: none; }
+  .start p { margin: 0; flex: 1; font-size: 12.5px; }
+  .start .btn { width: auto; flex: none; }
+}
+@media (max-width: 520px) { .start p { display: none; } .start .btn { width: 100%; } }
+
+/* drag overlay for the whole window */
+.overlay {
+  position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; pointer-events: none;
+  background: color-mix(in srgb, var(--accent) 14%, transparent); opacity: 0; transition: opacity .12s;
+}
+.overlay div {
+  padding: 18px 28px; border-radius: 10px; background: var(--surface); border: 1.5px dashed var(--accent);
+  font-weight: 600;
+}
+body.dragging .overlay { opacity: 1; }
+
+.done {
+  position: fixed; inset: 0; z-index: 30; display: none; place-items: center; background: var(--bg); text-align: center;
+}
+.done h2 { font: 600 22px/1.3 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; margin: 0 0 6px; }
+.done p { color: var(--muted); margin: 0; }
+body.started .done { display: grid; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="titles">
+    <h1>New website brief</h1>
+    <div class="folder" id="folder">Loading…</div>
+  </div>
+  <div class="status" id="status" data-state="idle" role="status" aria-live="polite"><span class="dot"></span><span id="status-text">Not saved yet</span></div>
+</header>
+
+<main class="layout">
+  <form class="main" id="form" autocomplete="off" onsubmit="return false">
+    <p class="intro">Fill in what you know and leave the rest blank. Claude works out everything else from links and photos. Changes save to <code>BRIEF.md</code> as you type.</p>
+
+    <section class="card">
+      <h2>Project type</h2>
+      <p class="sub">Decides whether Claude may invent missing details.</p>
+      <div class="choice" role="radiogroup" aria-label="Project type">
+        <label><input type="radio" name="Project type" value="sample"><strong>Portfolio sample</strong><span>Claude invents a plausible business for the gaps (<span class="nw">555-01xx</span> numbers).</span></label>
+        <label><input type="radio" name="Project type" value="client"><strong>Real client</strong><span>Facts only. Nothing invented about the business.</span></label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>The business</h2>
+      <p class="sub">Contact details are copied onto the site exactly as written here.</p>
+      <div class="grid">
+        <div class="field"><label for="f-name">Business name</label><input type="text" id="f-name" data-key="Business name"></div>
+        <div class="field"><label for="f-loc">Location / service area</label><input type="text" id="f-loc" data-key="Location / service area" placeholder="e.g. Pittsburgh and the South Hills"></div>
+        <div class="field wide"><label for="f-what">What they do <span class="hint">· one line</span></label><input type="text" id="f-what" data-key="What they do (one line)"></div>
+        <div class="field"><label for="f-phone">Phone</label><input type="tel" id="f-phone" data-key="Phone"></div>
+        <div class="field"><label for="f-email">Email</label><input type="email" id="f-email" data-key="Email"></div>
+        <div class="field"><label for="f-addr">Address</label><input type="text" id="f-addr" data-key="Address"></div>
+        <div class="field"><label for="f-hours">Hours</label><input type="text" id="f-hours" data-key="Hours" placeholder="e.g. Mon–Fri 8–5, Sat 9–1"></div>
+        <div class="field wide"><label for="f-links">Links <span class="hint">· existing site, Google Business Profile, Facebook, Instagram, one per line</span></label><textarea id="f-links" data-key="Links (existing site, Google Business Profile, Facebook, Instagram)" rows="2"></textarea></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Their story</h2>
+      <p class="sub">What makes this site theirs rather than any competitor's.</p>
+      <div class="grid">
+        <div class="field wide"><label for="f-cust">Who the customers are</label><textarea id="f-cust" data-key="Who the customers are" rows="2"></textarea></div>
+        <div class="field wide"><label for="f-diff">What makes them different <span class="hint">· owner, history, real work, how they do it</span></label><textarea id="f-diff" data-key="What makes them different (owner, history, real work, how they do it)" rows="3"></textarea></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>The website</h2>
+      <p class="sub">Leave any of these blank and Claude decides.</p>
+      <div class="grid">
+        <div class="field wide">
+          <label for="f-action">Main thing visitors should do</label>
+          <div class="chips" id="action-chips" aria-label="Quick picks">
+            <button type="button" class="chip" data-word="call" aria-pressed="false">Call</button>
+            <button type="button" class="chip" data-word="quote" aria-pressed="false">Get a quote</button>
+            <button type="button" class="chip" data-word="book" aria-pressed="false">Book</button>
+            <button type="button" class="chip" data-word="visit" aria-pressed="false">Visit</button>
+          </div>
+          <input type="text" id="f-action" data-key="Main thing visitors should do (call / quote / book / visit)">
+        </div>
+        <div class="field wide"><label for="f-pages">Pages needed</label><input type="text" id="f-pages" data-key="Pages needed (blank = Claude decides)" placeholder="e.g. Home, Services, Gallery, About, Contact"></div>
+        <div class="field wide"><label for="f-form">Where form messages go <span class="hint">· blank = demo mode, listed at handoff · <code>netlify</code> (Netlify host) · <code>web3forms:</code>key · a Formspree URL</span></label><input type="text" id="f-form" data-key="Form endpoint" placeholder="e.g. web3forms:1a2b3c4d-…" spellcheck="false" autocomplete="off"></div>
+        <div class="field wide"><label for="f-booking">Online booking link <span class="hint">· Calendly, Cal.com; optional</span></label><input type="url" id="f-booking" data-key="Online booking link (Calendly / Cal.com, optional)" placeholder="https://cal.com/…"></div>
+        <div class="field"><label for="f-must">Must have</label><textarea id="f-must" data-key="Must have" rows="2"></textarea></div>
+        <div class="field"><label for="f-avoid">Must avoid</label><textarea id="f-avoid" data-key="Must avoid" rows="2"></textarea></div>
+        <div class="field wide"><label for="f-style">Style references <span class="hint">· links, or file names you dropped in (images or a DESIGN.md)</span></label><textarea id="f-style" data-key="Style references (links, or file names in client-assets/)" rows="2"></textarea></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Before Claude starts</h2>
+      <p class="sub">Answer these now so the pipeline doesn't stop to ask.</p>
+      <div class="rows">
+        <div class="row">
+          <span class="label" id="l-deploy">Deploy a preview</span>
+          <span class="switch"><input type="checkbox" data-key="Deploy preview" aria-labelledby="l-deploy" id="f-deploy"><span class="track"></span><span class="knob"></span></span>
+          <span class="hint">A private, noindex preview link once the build passes QA.</span>
+        </div>
+        <div class="row" id="host-row">
+          <span class="label" id="l-host">Preview host</span>
+          <span class="seg" id="host" role="group" aria-labelledby="l-host">
+            <button type="button" data-value="cloudflare" aria-pressed="true">Cloudflare</button>
+            <button type="button" data-value="netlify" aria-pressed="false">Netlify</button>
+          </span>
+          <span class="hint">Cloudflare has unlimited free bandwidth.</span>
+        </div>
+        <div class="row">
+          <span class="label" id="l-stock">Use stock photos for gaps</span>
+          <span class="switch"><input type="checkbox" data-key="Use stock photos for gaps" aria-labelledby="l-stock"><span class="track"></span><span class="knob"></span></span>
+          <span class="hint">Fills sections that client photos don't cover.</span>
+        </div>
+        <div class="row">
+          <span class="label" id="l-ai">Write AI image prompts</span>
+          <span class="switch"><input type="checkbox" data-key="AI image prompts" aria-labelledby="l-ai"><span class="track"></span><span class="knob"></span></span>
+          <span class="hint">Image-generation prompts for the gaps instead of stock photos.</span>
+        </div>
+        <div class="row">
+          <span class="label" id="l-gsap">GSAP scroll motion</span>
+          <span class="seg" id="motion" role="group" aria-labelledby="l-gsap">
+            <button type="button" data-value="no" aria-pressed="true">Off</button>
+            <button type="button" data-value="yes" aria-pressed="false">Signature</button>
+            <button type="button" data-value="advanced" aria-pressed="false">Advanced</button>
+          </span>
+          <span class="hint" id="motion-hint"></span>
+        </div>
+        <div class="row">
+          <span class="label" id="l-pause">Pause for a direction review</span>
+          <span class="switch"><input type="checkbox" data-key="Pause for direction review" aria-labelledby="l-pause"><span class="track"></span><span class="knob"></span></span>
+          <span class="hint">Stops after the homepage so you can review it.</span>
+        </div>
+      </div>
+    </section>
+  </form>
+
+  <aside class="side">
+    <section class="card" style="margin:0">
+      <h2>Photos &amp; logo</h2>
+      <p class="sub">Client photos, logo, screenshots. They're copied into <code>client-assets</code>.</p>
+      <div class="drop" id="drop" role="button" tabindex="0" aria-label="Add client files">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+        <strong>Drop files here</strong>
+        <span>or click to choose</span>
+      </div>
+      <input type="file" id="picker" multiple hidden>
+      <div class="files" id="files"></div>
+      <div class="file-meta"><span id="count">No files yet</span><button type="button" class="link" id="open-folder">Open folder</button></div>
+    </section>
+
+    <section class="card start" style="margin:0">
+      <h2>When you're ready</h2>
+      <p>Saves the brief and starts Claude in the terminal. You can close this window instead and come back later; nothing is lost.</p>
+      <button type="button" class="btn" id="start">
+        Start building
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+      </button>
+      <div class="kbd">Ctrl + Enter</div>
+    </section>
+  </aside>
+</main>
+
+<div class="overlay" aria-hidden="true"><div>Drop to add to client-assets</div></div>
+<div class="done"><div><h2>Claude is starting</h2><p>Switch to the terminal to follow along. This window will close.</p></div></div>
+
+<script>
+const TOKEN = "__TOKEN__";
+const api = (path, opts = {}) => fetch(path, { ...opts, headers: { "X-Token": TOKEN, ...(opts.headers || {}) } });
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+
+const form = $("#form");
+const statusEl = $("#status"), statusText = $("#status-text");
+const host = $("#host"), deploy = $("#f-deploy"), motion = $("#motion");
+const action = $("#f-action");
+let loaded = false, saveTimer = null, inFlight = null;
+
+function setStatus(state, text) { statusEl.dataset.state = state; statusText.textContent = text; }
+
+function collect() {
+  const fields = {};
+  $$("[data-key]", form).forEach(el => {
+    fields[el.dataset.key] = el.type === "checkbox" ? (el.checked ? "yes" : "no") : el.value.trim();
+  });
+  const type = $('input[name="Project type"]:checked');
+  if (type) fields["Project type"] = type.value;
+  fields["Deploy host"] = $('button[aria-pressed="true"]', host).dataset.value;
+  fields["GSAP motion"] = $('button[aria-pressed="true"]', motion).dataset.value;
+  return fields;
+}
+
+function fill(values) {
+  $$("[data-key]", form).forEach(el => {
+    const v = values[el.dataset.key];
+    if (v === undefined) return;
+    if (el.type === "checkbox") el.checked = /^y/i.test(v.trim());
+    else el.value = v;
+  });
+  const type = (values["Project type"] || "sample").trim().toLowerCase();
+  const radio = $(`input[name="Project type"][value="${type === "client" ? "client" : "sample"}"]`);
+  radio.checked = true;
+  setHost((values["Deploy host"] || "cloudflare").trim().toLowerCase() === "netlify" ? "netlify" : "cloudflare");
+  const m = (values["GSAP motion"] || "no").trim().toLowerCase();
+  setMotion(m.startsWith("adv") ? "advanced" : m.startsWith("y") ? "yes" : "no");
+  syncChips(); syncHost();
+}
+
+async function save() {
+  clearTimeout(saveTimer);
+  if (!loaded) return;
+  setStatus("saving", "Saving…");
+  try {
+    inFlight = api("/api/save", { method: "POST", body: JSON.stringify({ fields: collect() }) });
+    const res = await inFlight;
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    setStatus("saved", `Saved to BRIEF.md · ${data.saved}`);
+  } catch (e) {
+    setStatus("error", "Couldn't save. Retrying…");
+    saveTimer = setTimeout(save, 3000);
+  }
+}
+const queueSave = () => { clearTimeout(saveTimer); setStatus("saving", "Editing…"); saveTimer = setTimeout(save, 500); };
+
+form.addEventListener("input", queueSave);
+form.addEventListener("change", () => { syncHost(); queueSave(); });
+
+/* preview host segmented control */
+function setHost(value) { $$("button", host).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.value === value))); }
+function syncHost() { host.setAttribute("aria-disabled", String(!deploy.checked)); $("#host-row").style.opacity = deploy.checked ? 1 : .55; }
+host.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; setHost(b.dataset.value); queueSave(); });
+
+/* GSAP motion level segmented control: no / yes (signature) / advanced */
+const MOTION_HINTS = {
+  no: "No GSAP: the template's light reveals and parallax only.",
+  yes: "1–3 signature scroll moments (pinned story, split headline, horizontal gallery, line-and-nodes trace, sticker badge). Name them under Must have, or Claude picks.",
+  advanced: "A full motion system, like an award-site build: intro loader, one animated scene behind the page that changes per section, line-by-line text reveals, smooth wheel scrolling, glows. Name a reference site under Style references, or Claude picks.",
+};
+function setMotion(value) {
+  $$("button", motion).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.value === value)));
+  $("#motion-hint").textContent = MOTION_HINTS[value];
+}
+motion.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; setMotion(b.dataset.value); queueSave(); });
+setMotion("no");
+
+/* main action chips <-> text */
+const words = () => action.value.toLowerCase().split(/[\s,/]+|\band\b|\bor\b/).filter(Boolean);
+function syncChips() {
+  const w = words();
+  $$("#action-chips .chip").forEach(c => c.setAttribute("aria-pressed", String(w.includes(c.dataset.word))));
+}
+$("#action-chips").addEventListener("click", e => {
+  const c = e.target.closest(".chip"); if (!c) return;
+  const on = c.getAttribute("aria-pressed") !== "true";
+  const order = ["call", "quote", "book", "visit"];
+  const known = new Set(words().filter(w => order.includes(w)));
+  const extra = action.value.split("/").map(s => s.trim()).filter(s => s && !order.includes(s.toLowerCase()));
+  on ? known.add(c.dataset.word) : known.delete(c.dataset.word);
+  action.value = [...order.filter(w => known.has(w)), ...extra].join(" / ");
+  syncChips(); queueSave();
+});
+action.addEventListener("input", syncChips);
+
+/* files */
+const filesEl = $("#files"), picker = $("#picker"), drop = $("#drop");
+function renderFiles(assets) {
+  filesEl.innerHTML = "";
+  assets.forEach(a => {
+    const div = document.createElement("div");
+    div.className = "file"; div.title = a.name;
+    if (a.image) {
+      const img = document.createElement("img");
+      img.loading = "lazy"; img.alt = ""; img.src = `/asset?t=${TOKEN}&name=${encodeURIComponent(a.name)}`;
+      div.append(img);
+    } else {
+      const ext = document.createElement("span");
+      ext.className = "ext"; ext.textContent = (a.name.split(".").pop() || "file").slice(0, 5);
+      div.append(ext);
+    }
+    const name = document.createElement("span"); name.className = "name"; name.textContent = a.name;
+    const rm = document.createElement("button");
+    rm.type = "button"; rm.className = "rm"; rm.setAttribute("aria-label", `Move ${a.name} to the Recycle Bin`);
+    rm.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+    rm.addEventListener("click", async () => {
+      div.classList.add("uploading");
+      const res = await api("/api/remove", { method: "POST", body: JSON.stringify({ name: a.name }) });
+      const data = await res.json();
+      renderFiles(data.assets);
+    });
+    div.append(name, rm);
+    filesEl.append(div);
+  });
+  $("#count").textContent = assets.length ? `${assets.length} file${assets.length === 1 ? "" : "s"} in client-assets` : "No files yet";
+}
+
+async function upload(fileList) {
+  // Dropped folders arrive as typeless, extensionless entries; skip them.
+  const files = [...fileList].filter(f => f.type !== "" || f.name.includes("."));
+  for (const f of files) {
+    const ph = document.createElement("div");
+    ph.className = "file uploading";
+    ph.innerHTML = `<span class="ext">…</span><span class="name"></span>`;
+    $(".name", ph).textContent = f.name;
+    filesEl.prepend(ph);
+    try {
+      const res = await api(`/api/upload?name=${encodeURIComponent(f.name)}`, { method: "POST", body: f });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || res.status);
+      renderFiles(data.assets);
+    } catch (e) {
+      ph.remove();
+      setStatus("error", `Couldn't add ${f.name}: ${e.message}`);
+    }
+  }
+}
+
+drop.addEventListener("click", () => picker.click());
+drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); picker.click(); } });
+picker.addEventListener("change", () => { upload(picker.files); picker.value = ""; });
+
+let dragDepth = 0;
+const hasFiles = e => [...(e.dataTransfer?.types || [])].includes("Files");
+window.addEventListener("dragenter", e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth++; document.body.classList.add("dragging"); drop.classList.add("over"); });
+window.addEventListener("dragleave", e => { if (!hasFiles(e)) return; if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove("dragging"); drop.classList.remove("over"); } });
+window.addEventListener("dragover", e => { if (hasFiles(e)) e.preventDefault(); });
+window.addEventListener("drop", e => {
+  if (!hasFiles(e)) return;
+  e.preventDefault(); dragDepth = 0;
+  document.body.classList.remove("dragging"); drop.classList.remove("over");
+  upload(e.dataTransfer.files);
+});
+
+$("#open-folder").addEventListener("click", () => api("/api/open-folder", { method: "POST" }));
+
+/* start */
+async function start() {
+  const btn = $("#start");
+  btn.disabled = true;
+  clearTimeout(saveTimer);
+  try {
+    const res = await api("/api/start", { method: "POST", body: JSON.stringify({ fields: collect() }) });
+    if (!res.ok) throw new Error(res.status);
+    document.body.classList.add("started");
+  } catch (e) {
+    btn.disabled = false;
+    setStatus("error", "Couldn't reach the pipeline. Is the terminal still open?");
+  }
+}
+$("#start").addEventListener("click", start);
+window.addEventListener("keydown", e => {
+  if (e.ctrlKey && e.key === "Enter") { e.preventDefault(); start(); }
+  if (e.ctrlKey && e.key.toLowerCase() === "s") { e.preventDefault(); save(); }
+});
+
+/* heartbeat lets the server notice a closed window when it can't watch the browser process */
+setInterval(() => api("/api/ping").catch(() => {}), 5000);
+
+(async () => {
+  const res = await api("/api/brief");
+  const data = await res.json();
+  $("#folder").textContent = data.folder;
+  $("#folder").title = data.path;
+  document.title = `${data.fields["Business name"] || data.folder} · Brief`;
+  fill(data.fields);
+  renderFiles(data.assets);
+  loaded = true;
+  setStatus("saved", "BRIEF.md loaded");
+  if (!data.fields["Business name"]) $("#f-name").focus();
+  else $("#f-what").focus();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+/* ==========================================================================
+   Tokens: replaced in the Direction phase, from the business's own story.
+   Every text token must reach 4.5:1 on EVERY surface it sits on (bg, surface,
+   cards); tools/browser_qa.mjs measures the rendered result.
+   ========================================================================== */
+:root {
+  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-body);
+
+  --c-bg: #ffffff;
+  --c-surface: #f3f3f0;
+  --c-text: #1b1b1a;
+  --c-muted: #55554f;
+  --c-line: #d9d9d2;
+  --c-brand: #1d4ed8;
+  --c-on-brand: #ffffff;   /* pure white on saturated brand colours */
+  --c-error: #b42318;
+  --c-ok: #1f7a3a;
+
+  --radius: 6px;
+  --container: 72rem;
+  --gutter: clamp(1rem, 4vw, 2rem);
+  --header-h: 4.5rem;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+/* ---------------------------------------------------------------- base */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: var(--header-h); }
+body {
+  margin: 0;
+  background: var(--c-bg);
+  color: var(--c-text);
+  font: 1rem/1.6 var(--font-body);
+}
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; text-wrap: balance; }
+/* an explicit h1 size: Chrome deprecates the UA's smaller h1 inside <section>, and Lighthouse flags it */
+h1 { font-size: clamp(2.25rem, 6vw, 3.5rem); }
+p { text-wrap: pretty; }
+img, svg, video { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--c-brand); outline-offset: 2px; }
+
+.container { width: min(100% - 2 * var(--gutter), var(--container)); margin-inline: auto; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.skip-link { position: absolute; left: 1rem; top: -4rem; z-index: 100; padding: .5rem 1rem; background: var(--c-text); color: var(--c-bg); }
+.skip-link:focus { top: 1rem; }
+
+/* ---------------------------------------------------------------- rule utilities */
+.nowrap { white-space: nowrap; }
+.wrap-anywhere { overflow-wrap: anywhere; }
+.icon { width: 1.15em; height: 1.15em; flex: none; }
+/* icon + text rows (address, phone, email): the icon never drops to its own line */
+.icon-row { display: inline-flex; align-items: center; gap: .5em; }
+/* badges and pills never wrap at 360–390px; hide secondary bits on small screens instead */
+.badge, .pill { display: inline-flex; align-items: center; gap: .4em; white-space: nowrap; }
+/* sticky sub-navs and pill bars sit centered */
+.subnav { width: fit-content; max-width: 100%; margin-inline: auto; overflow-x: auto; }
+/* hours and spec tables: aligned columns, values never wrap */
+.hours, .specs { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1.5rem; margin: 0; }
+.hours dt, .specs dt { margin: 0; }
+.hours dd, .specs dd { margin: 0; white-space: nowrap; }
+.contact-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+/* online booking: a text link under the call button, never a second solid button */
+.contact__booking { margin: .5rem 0 1rem; }
+
+/* ---------------------------------------------------------------- buttons
+   One primary CTA label + style sitewide (.btn-primary). Everything else is
+   .btn-ghost or a text link. .btn-call is the phone number. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5em;
+  min-height: 2.75rem; padding: .7rem 1.25rem; border: 2px solid transparent; border-radius: var(--radius);
+  font: 600 1rem/1.2 var(--font-body); text-decoration: none; white-space: nowrap; cursor: pointer;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary, .btn-submit { background: var(--c-brand); color: var(--c-on-brand); }
+.btn-ghost { border-color: currentColor; background: transparent; }
+.btn-call { background: var(--c-text); color: var(--c-bg); }
+.actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+
+/* ---------------------------------------------------------------- header
+   Fixed-height bar. The scrolled state changes transform + opacity only (backdrop on ::before, the logo
+   scales); main.js animates between the states. Never change height. */
+.site-header { position: sticky; top: 0; z-index: 50; height: var(--header-h); }
+.site-header::before {
+  content: ""; position: absolute; inset: 0; background: var(--c-bg); box-shadow: 0 1px 0 var(--c-line);
+  opacity: 0;
+}
+.site-header.is-scrolled::before { opacity: 1; }
+.site-header__bar { position: relative; height: 100%; display: flex; align-items: center; gap: 1rem; }
+.brand { font: 700 1.2rem/1 var(--font-display); text-decoration: none; transform-origin: left center; }
+.site-header.is-scrolled .brand { transform: scale(.92); }
+.site-nav { margin-left: auto; }
+.site-nav ul { display: flex; gap: 1.25rem; list-style: none; margin: 0; padding: 0; }
+.site-nav a { text-decoration: none; }
+.site-nav a[aria-current="page"] { text-decoration: underline; text-underline-offset: .3em; }
+.header-call { display: inline-flex; align-items: center; gap: .4em; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.nav-toggle { display: none; }
+
+@media (max-width: 899px) {
+  .nav-toggle {
+    display: inline-flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem;
+    border: 0; background: transparent; color: inherit; cursor: pointer;
+  }
+  .header-call { margin-left: auto; min-width: 2.75rem; min-height: 2.75rem; justify-content: center; }
+  .site-nav {
+    position: fixed; inset: var(--header-h) 0 auto 0; margin: 0; padding: 1rem var(--gutter) 1.5rem;
+    background: var(--c-bg); box-shadow: 0 8px 24px rgb(0 0 0 / .12);
+    opacity: 0; visibility: hidden; transform: translateY(-.5rem);
+  }
+  .nav-open .site-nav { opacity: 1; visibility: visible; transform: none; }
+  .site-nav ul { flex-direction: column; gap: 0; }
+  .site-nav a { display: block; padding: .75rem 0; }
+}
+@media (max-width: 599px) {
+  .header-call__num { display: none; }
+  .header-cta { display: none; }
+}
+
+/* ---------------------------------------------------------------- forms */
+.form { display: grid; gap: 1rem; }
+.field { display: grid; gap: .35rem; }
+.field label { font-weight: 600; }
+.field__hint { font-weight: 400; color: var(--c-muted); }
+.field input, .field select, .field textarea {
+  width: 100%; min-height: 2.75rem; padding: .6rem .75rem; border: 1px solid var(--c-line); border-radius: var(--radius);
+  background: var(--c-bg); color: var(--c-text); font: inherit;
+}
+.form__next { color: var(--c-muted); }
+.form__status:empty { display: none; }
+.form__status[data-kind="error"] { color: var(--c-error); }
+.form__status[data-kind="ok"] { color: var(--c-ok); }
+
+/* ---------------------------------------------------------------- contact (phone before form on mobile) */
+.contact { display: grid; gap: 2rem; padding-block: 2rem 4rem; }
+.contact h1 { margin: 0; }
+@media (min-width: 900px) {
+  .contact { grid-template-columns: 1fr 1.6fr; align-items: start; }
+  .contact h1 { grid-column: 1 / -1; }
+}
+
+/* ---------------------------------------------------------------- footer */
+.site-footer { margin-top: 4rem; padding-block: 3rem 1.5rem; background: var(--c-surface); }
+.site-footer__grid { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+.site-footer__name, .site-footer__heading { margin: 0 0 .75rem; font-weight: 700; }
+.site-footer nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+.site-footer__legal { margin-top: 2rem; color: var(--c-muted); font-size: .9rem; }
+
+/* ---------------------------------------------------------------- parallax (default 50% speed, main.js)
+   The frame (.media) is the positioned, overflow-hidden box; the image moves by translateY only.
+   A band mid-page must be max(frame, (frame + viewport) / 2) tall, pinned to the frame top, to stay covered
+   (lvh: the largest mobile viewport, so the URL bar never exposes a gap). Photo headers that start at the
+   page top only scroll away, so a frame-sized image covers them. Static under reduced motion. */
+.media { position: relative; overflow: hidden; }
+.media > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.media > img[data-parallax] { position: absolute; left: 0; top: 0; height: max(100%, calc(50% + 50lvh + 2px)); will-change: transform; }
+.media--top > img[data-parallax] { height: 100%; }  /* hero / page head at the very top of the page */
+
+/* ---------------------------------------------------------------- motion
+   All animation runs in JavaScript (the user's standard, 2026-10-09; qa.py errors on CSS transition, animation
+   and @keyframes). CSS only describes the states (hidden/shown, open/closed, scrolled); main.js morph() animates
+   between them with transform + opacity, and GSAP sites add motion.js. Reveals wait hidden only when motion
+   is welcome. */
+@media (prefers-reduced-motion: no-preference) {
+  .js .reveal:not(.is-in) { opacity: 0; transform: translateY(1rem); }
+}
+/* GSAP horizontal gallery (motion.js, only when GSAP is on): a native swipe row with scroll-snap by default;
+   on desktop with motion, the section pins and GSAP slides the track with translateX. */
+[data-gsap="h-scroll"] { overflow: hidden; }
+[data-gsap-track] { display: flex; gap: 1rem; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; }
+[data-gsap-track] > * { flex: none; scroll-snap-align: start; }
+.is-h-pinned [data-gsap-track] { overflow: visible; scroll-snap-type: none; }
+/* GSAP circuit trace (motion.js data-gsap="trace"): a rail down the left of the list and a node on each item.
+   Without motion (or GSAP off) it's a static trace; with motion, motion.js draws the rail (--rail) and pops
+   each node (--node 0→1, tweened by GSAP) as the rail reaches it. Rail and nodes are graphics: keep them ≥3:1
+   on the surface. The nodes use each item's ::before, so the items' own markers can't use it. motion.js
+   measures the rail inset (::before top) and the node position, so retune them here freely. */
+[data-gsap="trace"] { position: relative; list-style: none; padding-left: 1.75rem; }
+[data-gsap="trace"]::before { content: ""; position: absolute; left: .45rem; top: .45rem; bottom: .45rem; width: 2px; background: var(--c-brand); transform-origin: top center; transform: scaleY(var(--rail, 1)); }
+[data-gsap="trace"] > * { position: relative; }
+[data-gsap="trace"] > *::before { content: ""; position: absolute; left: calc(-1.3rem - 4px); top: .35em; width: 10px; height: 10px; border-radius: 50%; background: var(--c-brand); transform: scale(var(--node, 1)); }
+/* GSAP sticker (motion.js data-gsap="sticker"): transforms need a box, so an inline badge becomes inline-block
+   (zero specificity: the badge's own display rule still wins) */
+:where([data-gsap="sticker"]) { display: inline-block; }
+@media (prefers-reduced-motion: reduce) {
+  .media > img[data-parallax] { transform: none !important; height: 100%; }
+}

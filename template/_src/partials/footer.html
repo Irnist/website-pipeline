@@ -1,0 +1,20 @@
+<footer class="site-footer">
+  <div class="container site-footer__grid">
+    <div>
+      <p class="site-footer__name">{{NAME}}</p>
+      <ul class="contact-list">
+        <li><a class="icon-row" href="{{PHONE_HREF}}">{{i:phone}}<span>{{PHONE}}</span></a></li>
+        <li><a class="icon-row" href="{{EMAIL_HREF}}">{{i:mail}}<span class="wrap-anywhere">{{EMAIL_HTML}}</span></a></li>
+        <li><a class="icon-row" href="{{MAPS_URL}}">{{i:map-pin}}<span>{{ADDR1}}, {{ADDR2}}</span></a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="site-footer__heading">Hours</p>
+      {{fn:hours}}
+    </div>
+    <nav aria-label="Footer">{{fn:nav}}</nav>
+  </div>
+  <div class="container site-footer__legal">
+    <p>&copy; {{YEAR}} {{NAME}}</p>
+  </div>
+</footer>
