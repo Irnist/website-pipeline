@@ -253,6 +253,7 @@ Entries L-003 to L-016 were mined on 2026-10-07 from the impeccable critiques of
 - Prevention: when resuming an older project, sync `tools/` from the template first (copy the template's version, or port its new checks into a customised copy), then run QA.
 - Enforced by: check (`qa.py` warns when a template tool is newer than the project's copy and differs from it) + step (SKILL.md › 0, resume row)
 - Seen: Portfolio
+- **Superseded 2026-10-13:** the sync step kept failing (Gadget Zone, Macz and Trevor Travis were 2–5 tools behind, hiding an L-072 contact-form error on all three). Projects no longer copy the tools: `<pipeline>/tools/` is the one copy, each site's `tools/` holds stubs that run it, and `qa.py` warns about any full copy left in a site (`dev/use_shared_tools.py` swaps them).
 
 ### L-051 · 2026-10-10 · Portfolio (Ernest Banigon) · typography
 - Mistake: display headings were set to line-height .98. When "Have a project in mind?" wrapped, the "j" of "project" sat on the "?" below it, and the hero's "g" in "Designer" nearly touched the "l" in "Specialist" on phones.
@@ -416,6 +417,7 @@ Entries L-003 to L-016 were mined on 2026-10-07 from the impeccable critiques of
 - Prevention: a fix to a project's `tools/` goes into `template/tools/` in the same session. Diff the two copies (`git diff --no-index`) before handoff.
 - Enforced by: rule (CLAUDE.md › Process & tooling)
 - Seen: Macz Arkitektura
+- **Superseded 2026-10-13:** sites no longer have their own tool copies to fix (see L-052): all tools run from `<pipeline>/tools/`.
 
 ### L-032 · 2026-10-07 · Macz Arkitektura · a11y
 - Mistake: on phones, the quote band's cite line (#e6dccb) ran across the light paper in the photo, at about 1.9:1 against the brighter part.

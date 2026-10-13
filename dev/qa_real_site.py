@@ -1,6 +1,7 @@
-"""Run the template's QA tools over a copy of a finished past site (the original is only read).
+"""Run the pipeline's shared QA tools over a copy of a finished past site (the original is only read).
 
-Use it to prove a new check has no false positives on real markup (LESSONS L-017).
+Use it to prove a new check has no false positives on real markup (LESSONS L-017). The scratch workdir must be
+inside the workspace (e.g. <workspace>/_temp/...): its tools/ stubs find the shared tools by walking up.
 
     python dev/qa_real_site.py "<site folder>" <scratch workdir> "<cta label>" <cta href>
     cd <scratch workdir> && node tools/browser_qa.mjs      (optional, after the qa.py run)

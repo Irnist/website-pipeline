@@ -4,7 +4,7 @@
 
 Stages only the published files (top-level *.html, favicon/robots, assets/) into
 <site>/.pipeline/stage with a noindex _headers file, then deploys that folder as a
-static-assets Worker named <folder>-preview, the same way template/tools/deploy.py does
+static-assets Worker named <folder>-preview, the same way the shared tools/deploy.py does
 (L-026: never let wrangler autoconfig run in the site folder). Source folders (_src,
 Media, .impeccable, client-assets, qa) are never staged.
 """

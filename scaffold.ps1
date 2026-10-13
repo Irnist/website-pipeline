@@ -39,13 +39,22 @@ if ($resuming) {
 } else {
   New-Item -ItemType Directory -Force -Path $Target | Out-Null
   # /E recurse, /XC /XN /XO never overwrite existing files, /XD skip scratch folders left in the template
-  robocopy $template $Target /E /XC /XN /XO /XD _temp qa dist /NFL /NDL /NJH /NJS /NP | Out-Null
+  robocopy $template $Target /E /XC /XN /XO /XD _temp qa dist __pycache__ /NFL /NDL /NJH /NJS /NP | Out-Null
   if ($LASTEXITCODE -ge 8) { Write-Host "Copy failed (robocopy $LASTEXITCODE)"; exit 1 }
   $global:LASTEXITCODE = 0
   if ($Name) {
     $brief = Join-Path $Target 'BRIEF.md'
     $text = [IO.File]::ReadAllText($brief) -replace '(?m)^Business name:.*$', "Business name: $Name"
     [IO.File]::WriteAllText($brief, $text, (New-Object Text.UTF8Encoding $false))
+  }
+  # Every site is a git repo from the start: phases commit as they finish and a redesign tags the old version.
+  # A redesign keeps its .git (only the files were archived), so it continues the same history.
+  if ((Get-Command git -ErrorAction SilentlyContinue) -and -not (Test-Path (Join-Path $Target '.git'))) {
+    git -C $Target init -q -b main
+    git -C $Target config core.autocrlf false
+    git -C $Target add -A
+    git -C $Target commit -q -m 'Scaffold from the pipeline template'
+    $global:LASTEXITCODE = 0
   }
   Write-Host "Created $Target"
 }
