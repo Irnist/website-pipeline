@@ -300,6 +300,104 @@ def buried_backdrop(css):
     return None
 
 
+def css_blocks(css):
+    """Top-level `(prelude, body)` pairs of a comment-free stylesheet, in order (a body may hold nested blocks)."""
+    out, depth, start, prelude_at = [], 0, 0, 0
+    for i, ch in enumerate(css):
+        if ch == "{":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "}" and depth:
+            depth -= 1
+            if depth == 0:
+                prelude = css[prelude_at:start].strip()
+                prelude = prelude[prelude.rfind(";") + 1:].strip()  # drop @import/@charset lines before it
+                out.append((prelude, css[start + 1:i]))
+                prelude_at = i + 1
+    return out
+
+
+def media_before_base(css):
+    """A breakpoint override written above its component's base rule loses the cascade: same specificity, so the
+    later base rule wins at every width. On Macz the phone 2-column `.proj-row` stayed 1-column at 390 (L-063).
+    Returns (selector, property, media query) for each override that a later top-level rule undoes."""
+    rules = []  # (index, selector, props, media or None)
+    for prelude, body in css_blocks(css):
+        if prelude.startswith("@media"):
+            if "width" not in prelude:
+                continue  # print, reduced motion, hover: not a breakpoint override
+            for sel, inner in css_blocks(body):
+                rules.append((len(rules), sel, inner, prelude))
+        elif not prelude.startswith("@"):
+            rules.append((len(rules), prelude, body, None))
+    props = lambda body: {p.strip().lower() for p in re.findall(r"(?:^|;)\s*([\w-]+)\s*:", body)}  # noqa: E731
+    found = []
+    for i, sel, body, media in rules:
+        if media is None:
+            continue
+        mine = {" ".join(s.split()) for s in sel.split(",")}
+        for j, sel2, body2, media2 in rules[i + 1:]:
+            if media2 is None and (shared := mine & {" ".join(s.split()) for s in sel2.split(",")}):
+                for prop in sorted(props(body) & props(body2)):
+                    # set again by a breakpoint rule after the base: the early one is only dead code
+                    if not any(m3 and shared & {" ".join(s.split()) for s in s3.split(",")} and prop in props(b3)
+                               for _, s3, b3, m3 in rules[j + 1:]):
+                        found.append((" ".join(sorted(shared))[:60], prop, " ".join(media.split())[:50]))
+    return list(dict.fromkeys(found))
+
+
+def near_duplicates(usage, allowed):
+    """Pairs of different image files that show the same picture: a re-export, a crop or two renders from almost the
+    same angle. The repeat check compared file names only, so Macz placed two renders of one dining room as different
+    images (L-029). 64-bit difference hash; <= 10 differing bits is the same view."""
+    try:
+        from PIL import Image
+    except ImportError:
+        return []
+    hashes = {}
+    for ref in usage:
+        f = DIST / ref
+        if ref.startswith(("http", "data:")) or ref in allowed or BRAND_ASSET.search(ref) or not f.is_file() \
+                or f.suffix.lower() not in (".jpg", ".jpeg", ".png", ".webp"):
+            continue
+        try:
+            with Image.open(f) as im:
+                px = list(im.convert("L").resize((9, 8), Image.LANCZOS).getdata())
+        except OSError:
+            continue
+        hashes[ref] = sum(1 << n for n in range(64) if px[n // 8 * 9 + n % 8] > px[n // 8 * 9 + n % 8 + 1])
+    refs = sorted(hashes)
+    return [(a, b, bin(hashes[a] ^ hashes[b]).count("1")) for k, a in enumerate(refs) for b in refs[k + 1:]
+            if bin(hashes[a] ^ hashes[b]).count("1") <= 10]
+
+
+def brief_contacts(seen, warns):
+    """Contact values on the site must be the brief's, copied, never retyped: a retyped Instagram handle reached the
+    user with a typo (L-025). For each link host the brief names (instagram.com, facebook.com, a booking page...),
+    the site's links to that host must include the brief's URL; same for the phone number."""
+    brief = ROOT / "BRIEF.md"
+    if not brief.exists():
+        return
+    text = re.sub(r"<!--.*?-->", "", brief.read_text(encoding="utf-8"), flags=re.S)
+    text = "\n".join(l for l in text.splitlines() if not re.match(r"\s*(Style references|Form endpoint)", l, re.I))
+    key = lambda u: re.sub(r"^(https?://)?(www\.)?", "", u.strip().lower()).split("#")[0].split("?")[0].rstrip("/")  # noqa: E731
+    host = lambda u: key(u).split("/")[0]  # noqa: E731
+    hrefs = {h for p in seen.values() for h in p.links if h}
+    site_urls = [h for h in hrefs if h.startswith(("http://", "https://"))]
+    for url in dict.fromkeys(u.rstrip(".,;)") for u in re.findall(r"https?://[^\s<>\"'\]]+", text)):
+        same_host = sorted({key(h) for h in site_urls if host(h) == host(url)})
+        if same_host and key(url) not in same_host:
+            warns.append(f"BRIEF.md links {url} but the site links {', '.join(same_host[:3])} on that host: copy contact "
+                         "values from the brief, never retype them (L-025)")
+    m = re.search(r"^Phone:[ \t]*(.+)$", text, re.M)
+    brief_digits = digits(m.group(1))[-10:] if m else ""
+    tels = {digits(h)[-10:] for h in hrefs if h.lower().startswith("tel:")}
+    if len(brief_digits) >= 7 and tels and brief_digits not in tels:
+        warns.append(f"BRIEF.md's phone ({m.group(1).strip()}) matches no tel: link on the site "
+                     f"({', '.join(sorted(tels))}): copy it from the brief (L-025)")
+
+
 def deploy_host():
     """The host tools/deploy.py would pick: BRIEF.md "Deploy host:", else netlify if a Netlify site exists, else cloudflare."""
     brief = ROOT / "BRIEF.md"
@@ -649,12 +747,16 @@ def main():
             errors.append(f"{rel}: line-height {lh} on `{sel}`: below 1 the descenders of one line touch the next "
                           "line's ascenders when the text wraps (L-051); use 1.05+ on display type, or for an "
                           "all-caps face with no descenders set ALLOW_PATTERNS['tight-leading'] in site_config.py")
+        for sel, prop, media in media_before_base(body):
+            warns.append(f"{rel}: `{sel}` sets {prop} in `{media}` above its base rule, which comes later and wins "
+                         "at every width (L-063); move the breakpoint override below the base rule")
         if (bg := buried_backdrop(body)):
             errors.append(f"{rel}: `body {{ background: {bg[:40]} }}` paints over the negative-z body::before/::after "
                           "backdrop, so it never shows (L-060); move the page colour to html and make body transparent")
 
     gsap_checks(seen, errors, warns, allow)
     local_seo(seen, errors, warns, placeholders)
+    brief_contacts(seen, warns)
     if google_fonts:  # an error since L-039 repeated on the portfolio (2026-10-10)
         errors.append(f"Google Fonts CSS linked on {len(google_fonts)} page(s) ({', '.join(google_fonts[:4])}"
                       f"{', …' if len(google_fonts) > 4 else ''}): two render-blocking round trips, ~1.7s of mobile LCP "
@@ -667,6 +769,10 @@ def main():
     for ref, where in sorted(usage.items()):
         if len(where) > 1 and ref not in allowed and not BRAND_ASSET.search(ref):
             errors.append(f"image used {len(where)}x: {ref} → {', '.join(where)}")
+    for a, b, bits in near_duplicates(usage, allowed):
+        warns.append(f"near-duplicate images ({bits}/64 bits apart): {a} ({', '.join(usage[a])}) and {b} "
+                     f"({', '.join(usage[b])}): the same view counts as a repeat (L-029); swap one, or list it in "
+                     "ALLOW_REPEAT_IMAGES if they're shown together as one set")
     if eyebrow_total >= 3 and eyebrow_total >= 0.4 * max(h2_total, 1):
         errors.append(f"{eyebrow_total} of {h2_total} section headings carry a small label above or below (eyebrow/kicker/pill, L-073): "
                       "a template tell; keep it for one or two headings at most")

@@ -19,7 +19,7 @@ what went wrong and how it's enforced now. Open the full entry in LESSONS.md whe
 - **L-066** imagery · 7 of 32 portraits in the source Excel were shapes filled with a photo (`xdr:sp` with `a:blipFill`), and the extractor only read pictures (`xdr:pic`),… — log
 - **L-065** mobile · the masthead went two-column (title `1fr` + search `auto`) at 900px, but the title's longest word ("ORGANIZATIONAL" at 5.6rem) is its min-content, so… — log
 - **L-064** identity · search "dimmed" non-matching cards with `opacity`, so the connector lines behind them (tree rails, z-index below the cards) showed straight through t… — log
-- **L-063** mobile · the phone 2-column `.proj-row` media query sat above the base `.proj-row` rule, so the base rule won the cascade and the row stayed 1-column at 390. — log
+- **L-063** mobile · the phone 2-column `.proj-row` media query sat above the base `.proj-row` rule, so the base rule won the cascade and the row stayed 1-column at 390. — check+rule
 - **L-062** a11y · `data-gsap="split"` on the quote band's `<p>`. — check
 - **L-061** tooling · the redesign's first deploy created a second Cloudflare Worker (`macz-arkitektura-website-preview-xmcon`). — check
 - **L-060** identity · the blurred page backdrop (`body::before`, `position: fixed; z-index: -1`) never showed. — check
@@ -42,7 +42,7 @@ what went wrong and how it's enforced now. Open the full entry in LESSONS.md whe
 - **L-043** mobile / imagery · on phones the shop cards put each 4:3 product photo in an 8rem side column with `min-height: 100%`. — check+rule
 - **L-042** forms / a11y · the spotlight product's colour swatches copied the reference's look (dots with names) but were plain spans. — rule
 - **L-041** mobile · on phones, an empty band of about 120px sat between the poster rail and the Skills heading. — check+rule+log
-- **L-040** build · the contact page's source notes named `{{fn:form_fields}}` inside an HTML comment. — log
+- **L-040** build · the contact page's source notes named `{{fn:form_fields}}` inside an HTML comment. — check
 - **L-039** perf · both shipped sites were slow on phones. — check+step
 - **L-038** imagery · the headshot cut-out shipped with a white halo, light lines round the hair and both arms, on the dark hero. — check+log
 - **L-037** tooling · after the redesign, the user's desktop browser kept showing the old opaque headshot. — check
@@ -53,11 +53,11 @@ what went wrong and how it's enforced now. Open the full entry in LESSONS.md whe
 - **L-032** a11y · on phones, the quote band's cite line (#e6dccb) ran across the light paper in the photo, at about 1.9:1 against the brighter part. — check+rule
 - **L-031** a11y · the logo-stroke divider (an inline SVG, `currentColor`) stayed dark brown on the dark drafting-hands photo band, at about 1.1:1. — check+rule
 - **L-030** tooling · passed a Git-Bash `/c/...` path to Windows Python (`Image.save`), which raised FileNotFoundError. — log
-- **L-029** imagery · two photos from one shoot, and two near-identical renders, were placed as if they were different images: groundbreaking shovels plus groundbreaking h… — rule+step
+- **L-029** imagery · two photos from one shoot, and two near-identical renders, were placed as if they were different images: groundbreaking shovels plus groundbreaking h… — check+rule+step
 - **L-028** imagery · used a client presentation board that carries a column of third-party brand logos (fast-food and coffee chains), which reads as an implied client lis… — step
-- **L-027** tooling · a Python edit to `deploy.py` was sent through a Bash heredoc. — rule+step
+- **L-027** tooling · a Python edit to `deploy.py` was sent through a Bash heredoc. — check+rule+step
 - **L-026** tooling · wrote the Cloudflare deploy path against the classic Pages CLI (`pages project create` / `pages deploy`). — check+step
-- **L-025** process · retyped the brief's Instagram URL in the intake question and typo'd the handle ("adriachristophertorda"). — rule
+- **L-025** process · retyped the brief's Instagram URL in the intake question and typo'd the handle ("adriachristophertorda"). — check+rule
 - **L-024** mobile · the installment table relied on sideways scroll at 390px, so figures sat cut mid-number at the viewport edge. — check
 - **L-023** mobile · the desktop nav labels (six items, phone and CTA) wrapped onto two lines at 1440px. — check
 - **L-022** imagery · a numbered callout on the hero bike said "chain and sprocket" but pointed at the exhaust. — rule+step
@@ -84,7 +84,7 @@ what went wrong and how it's enforced now. Open the full entry in LESSONS.md whe
 - **L-001** tooling · `browser_qa.mjs` flagged the hidden mobile nav panel as horizontal overflow. — check
 - **L-000** all areas ·  — check+rule
 
-## Not machine-checked (32)
+## Not machine-checked (27)
 
 Enforced only by a rule, step or log: these rely on reading, so they're the likeliest to repeat.
 
@@ -95,7 +95,6 @@ Enforced only by a rule, step or log: these rely on reading, so they're the like
 - L-066 (log): 7 of 32 portraits in the source Excel were shapes filled with a photo (`xdr:sp` with `a:blipFill`), and the extractor only read pictures (`xdr:pic`),…
 - L-065 (log): the masthead went two-column (title `1fr` + search `auto`) at 900px, but the title's longest word ("ORGANIZATIONAL" at 5.6rem) is its min-content, so…
 - L-064 (log): search "dimmed" non-matching cards with `opacity`, so the connector lines behind them (tree rails, z-index below the cards) showed straight through t…
-- L-063 (log): the phone 2-column `.proj-row` media query sat above the base `.proj-row` rule, so the base rule won the cascade and the row stayed 1-column at 390.
 - L-058 (rule+step): the user answered "Yes, redesign it", and I archived the site, scaffolded with `-NoLaunch` and started redesigning on my own from the old BRIEF.md.
 - L-057 (rule+step): `/website` ran with no args in the finished Macz folder (every phase ticked), and I went ahead on my own.
 - L-056 (log): the first version of `dev/learn_prep.py` (which ingests images dropped into `design-library/inspiration/`) let a drop named `macz-reference-1.jpg` ov…
@@ -103,15 +102,11 @@ Enforced only by a rule, step or log: these rely on reading, so they're the like
 - L-049 (step): scroll-drawn circuit traces lit their nodes ahead of the line, three times.
 - L-044 (rule+log): the Home band and the Deals meta said "up to 28% off", while two Deals badges said "29% off".
 - L-042 (rule): the spotlight product's colour swatches copied the reference's look (dots with names) but were plain spans.
-- L-040 (log): the contact page's source notes named `{{fn:form_fields}}` inside an HTML comment.
 - L-035 (log): BRIEF.md said `Deploy host: cloudflare`, but I set the live portfolio up for Netlify.
 - L-034 (log): the new `dev/deploy_static.py` (noindex previews for older hand-built sites) hardcoded `npx.cmd` on Windows.
 - L-033 (rule): a `browser_qa.mjs` fix made in the Macz project copy (wait for scroll handlers before reading the header's colours) never reached `template/tools/`.
 - L-030 (log): passed a Git-Bash `/c/...` path to Windows Python (`Image.save`), which raised FileNotFoundError.
-- L-029 (rule+step): two photos from one shoot, and two near-identical renders, were placed as if they were different images: groundbreaking shovels plus groundbreaking h…
 - L-028 (step): used a client presentation board that carries a column of third-party brand logos (fast-food and coffee chains), which reads as an implied client lis…
-- L-027 (rule+step): a Python edit to `deploy.py` was sent through a Bash heredoc.
-- L-025 (rule): retyped the brief's Instagram URL in the intake question and typo'd the handle ("adriachristophertorda").
 - L-022 (rule+step): a numbered callout on the hero bike said "chain and sprocket" but pointed at the exhaust.
 - L-018 (rule): two tool scripts crashed printing non-ASCII text on the Windows cp1252 console: - `fetch_commons.py` crashed on a Japanese author name and lost the c…
 - L-017 (step): new checks passed the planted-defect and clean-template tests but gave false positives on the real IronCity and Weknz sites: - the logo counted as a…
@@ -121,4 +116,4 @@ Enforced only by a rule, step or log: these rely on reading, so they're the like
 - L-005 (rule+step): the palette ignored the logo.
 - L-004 (rule): dead-end features.
 
-Totals: 48 check, 26 rule, 24 step, 14 log across 80 lessons.
+Totals: 53 check, 27 rule, 24 step, 12 log across 80 lessons.

@@ -162,7 +162,7 @@ Entries L-003 to L-016 were mined on 2026-10-07 from the impeccable critiques of
 - Caught by: self (390 screenshots)
 - Root cause: the breakpoint override was written next to a related component instead of after its own base rule.
 - Prevention: put each breakpoint override after its component's base rules; check every grid at 390 in the screenshot pass.
-- Enforced by: log
+- Enforced by: check since 2026-10-13 (`qa.py` warns when a width `@media` rule sets a property that a later top-level rule for the same selector sets again; it found a second case on Macz, `.proj__cap h3`)
 - Seen: Macz Arkitektura
 
 ### L-062 · 2026-10-10 · Macz Arkitektura (redesign) · a11y
@@ -448,7 +448,7 @@ Entries L-003 to L-016 were mined on 2026-10-07 from the impeccable critiques of
 - Caught by: reviewer (finish reviewer)
 - Root cause: the no-repeat rule was checked by filename only.
 - Prevention: the image allocation notes each photo's shoot and angle. Near-duplicates and same-shoot pairs count as repeats unless they're shown together as one set.
-- Enforced by: rule (CLAUDE.md › Imagery, sharpened) plus step (VISUAL-REVIEW.md › Imagery)
+- Enforced by: rule (CLAUDE.md › Imagery, sharpened) plus step (VISUAL-REVIEW.md › Imagery) + check since 2026-10-13 (`qa.py` warns on two different image files within 10 bits of each other's 64-bit difference hash: re-exports, crops, renders from the same angle; same-shoot shots of different subjects still need the step)
 - Seen: Macz Arkitektura
 
 ### L-028 · 2026-10-07 · Macz Arkitektura · imagery
@@ -480,7 +480,7 @@ Entries L-003 to L-016 were mined on 2026-10-07 from the impeccable critiques of
 - Caught by: self
 - Root cause: contact values were retyped instead of copied.
 - Prevention: copy contact values (URLs, handles, phone, email) straight from the brief; never retype them.
-- Enforced by: rule (CLAUDE.md › Pipeline & questions)
+- Enforced by: rule (CLAUDE.md › Pipeline & questions) + check since 2026-10-13 (`qa.py` warns when the site links a host the brief names, such as instagram.com, but not the brief's URL, or when the brief's phone matches no tel: link)
 - Seen: Trevor Travis Motors
 
 ### L-024 · 2026-10-07 · Trevor Travis Motors · mobile

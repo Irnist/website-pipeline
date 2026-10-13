@@ -32,7 +32,11 @@ def entries(md):
         mistake = field("Mistakes?") or field("Prevention")
         enforced = field("Enforced by")
         low = enforced.lower()
-        levels = [lv for lv in LEVELS if re.search(rf"\b{lv}", low)] or (["check"] if "template fix" in low else ["log"])
+        levels = [lv for lv in LEVELS if re.search(rf"\b{lv}", low)]
+        # the build, a template fix or a hook enforce mechanically too
+        if "check" not in levels and re.search(r"^(build|template fix)|\bhook\b|block-heredoc", low + " " + body.lower()):
+            levels.insert(0, "check")
+        levels = levels or ["log"]
         yield {
             "id": lid, "date": date.strip(), "project": project.strip(), "area": (area or "").strip(),
             "mistake": first_sentence(mistake), "levels": levels,
