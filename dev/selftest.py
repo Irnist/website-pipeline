@@ -116,6 +116,7 @@ OTHER_EXPECT = [
     (r"control character", "mangled escapes (L-027)"),
     (r"hard-coded user path", "relative paths (L-055)"),
     (r"tools/ holds full copies of shared pipeline tools \(deploy\.py\)", "shared tools (L-052)"),
+    (r"tools/selftest_live\.py imports a stub", "site scripts never import a stub (L-080)"),
 ]
 # Planted into dist/selftest.html (a copy of about.html) for the browser pass
 BROWSER_MARKUP = """
@@ -199,6 +200,7 @@ def plant(site):
     (site / "assets" / "js" / "selftest-src.js").write_text(
         "const mangled = 'svg\x08';\nconst path = 'C:/Users/someone/site';\n", encoding="utf-8")
     (site / "tools" / "deploy.py").write_bytes((PIPELINE / "tools" / "deploy.py").read_bytes())
+    (site / "tools" / "selftest_live.py").write_text("from qa import ROOT\nprint(ROOT)\n", encoding="utf-8")
     about = (dist / "about.html").read_text(encoding="utf-8")
     (dist / "selftest.html").write_text(about.replace("</main>", BROWSER_MARKUP + "</main>", 1), encoding="utf-8")
 

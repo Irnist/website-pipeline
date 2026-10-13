@@ -3,6 +3,7 @@
 Generated from LESSONS.md by `dev/lessons_index.py`; don't edit by hand. One line per lesson:
 what went wrong and how it's enforced now. Open the full entry in LESSONS.md when one applies.
 
+- **L-080** tooling · when the sites switched to stubs for the shared tools (L-052), the portfolio's own `tools/deploy_live.py` still did `from deploy import ...`. — check
 - **L-079** motion · the homepage stage's particle snare overlapped the count-in metronome in the user's 1731×860 window, although it sat clear at 1440×900. — check+rule
 - **L-078** motion · on desktop the count-in heading and lede vanished partway through the section's 1,500px pin (visible in the user's screenshot; they didn't mention it… — check
 - **L-077** motion · on the first pass of the scroll-morphing instrument stage (a fixed canvas behind the home page), the keyboard was tipped nearly edge-on and read as a… — rule+log
@@ -115,4 +116,4 @@ Enforced only by a rule, step or log: these rely on reading, so they're the like
 - L-005 (rule+step): the palette ignored the logo.
 - L-004 (rule): dead-end features.
 
-Totals: 54 check, 27 rule, 24 step, 12 log across 80 lessons.
+Totals: 55 check, 27 rule, 24 step, 12 log across 81 lessons.

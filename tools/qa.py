@@ -276,6 +276,25 @@ def copied_tools(warns):
                      "\"<this site>\" (L-052)")
 
 
+def stub_imports(errors):
+    """A site-only script that imports a stub (`from deploy import ...`) runs the shared tool instead of loading it:
+    the portfolio's deploy_live.py would have shipped a noindex preview, then crashed (L-080). Load the shared module
+    by path with importlib (see the portfolio's tools/deploy_live.py)."""
+    tools = ROOT / "tools"
+    stubs = {f.stem for f in tools.glob("*") if f.is_file()
+             and "pipeline-tool-stub" in f.read_text(encoding="utf-8", errors="replace")}
+    if not stubs:
+        return
+    names = "|".join(map(re.escape, sorted(stubs)))
+    pattern = re.compile(rf"^\s*(?:from\s+(?:{names})\s+import|import\s+(?:{names})\b)"
+                         rf"|from\s+['\"]\./(?:{names})\.m?js['\"]|import\(\s*['\"]\./(?:{names})\.m?js", re.M)
+    for f in sorted(tools.glob("*")):
+        if f.is_file() and f.stem not in stubs and f.suffix in (".py", ".mjs", ".js"):
+            if (m := pattern.search(f.read_text(encoding="utf-8", errors="replace"))):
+                errors.append(f"tools/{f.name} imports a stub (`{m.group(0).strip()[:50]}`): that runs the shared tool "
+                              "instead of loading it; load the pipeline's copy by path with importlib (L-080)")
+
+
 def tight_leading(css):
     """Rules whose unitless line-height (or `font: size/lh`) is below 1. On Ernest Banigon's portfolio a .98 heading
     put the "j" of "project" on top of the "?" below it once the line wrapped (L-051)."""
@@ -763,6 +782,7 @@ def main():
                       f"{', …' if len(google_fonts) > 4 else ''}): two render-blocking round trips, ~1.7s of mobile LCP "
                       "on Macz. Self-host: python tools/self_host_fonts.py \"<css2 URL>\" --preload \"Family:400\"")
     copied_tools(warns)
+    stub_imports(errors)
     for t, where in empty_tokens.items():
         placeholders.insert(0, f"`{{{{{t}}}}}` has no value in site_config.py ({', '.join(where)})")
 

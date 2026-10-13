@@ -29,6 +29,14 @@ Entry format:
 
 Entries L-003 to L-016 were mined on 2026-10-07 from the impeccable critiques of IronCity (2026-10-06, 28/40) and Weknz (2026-10-06, 23/36). New checks were proven against planted defects, a clean template build, and copies of both shipped sites.
 
+### L-080 · 2026-10-13 · Portfolio Site (pipeline shared tools) · tooling
+- Mistake: when the sites switched to stubs for the shared tools (L-052), the portfolio's own `tools/deploy_live.py` still did `from deploy import ...`. `tools/deploy.py` was now a stub that runs the shared deploy as `__main__`, so the next live deploy would have shipped a noindex preview Worker first and then crashed on the missing names.
+- Caught by: self, reading `deploy_live.py` before the user-approved live redeploy; nothing ran.
+- Root cause: the stub conversion checked that each tool still ran, but not whether any site-only script imported a tool as a module.
+- Prevention: site scripts load a shared tool by path with `importlib` (as `deploy_live.py` now does); a stub is only ever run, never imported. Before converting tools, grep the site's own scripts for imports of them.
+- Enforced by: check (`qa.py` errors when a non-stub script in a site's `tools/` imports a stub, Python or JS; planted in `dev/selftest.py`)
+- Seen: Portfolio Site
+
 ### L-079 · 2026-10-13 · Music shop sample · motion
 - Mistake: the homepage stage's particle snare overlapped the count-in metronome in the user's 1731×860 window, although it sat clear at 1440×900.
 - Caught by: user (screenshot)
