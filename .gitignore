@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 .impeccable/hook.cache.json
+# Inspiration drops are other designers' work: kept locally, never published
+design-library/inspiration/
