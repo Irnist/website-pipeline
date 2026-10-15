@@ -6,7 +6,7 @@ Most of the concept sites in my [portfolio](https://ernestbanigon.pages.dev) wer
 
 | | |
 |---|---|
-| ![Trevor Travis Motors, a car dealer](design-library/shots/trevor-travis.webp) | ![Macz Arkitektura, an architecture firm](design-library/shots/macz.webp) |
+| ![Trevor Travis Motors, a motorcycle dealer](design-library/shots/trevor-travis.webp) | ![Macz Arkitektura, an architecture firm](design-library/shots/macz.webp) |
 | ![IronCity Rods & Customs, a custom car shop](design-library/shots/ironcity.webp) | ![Gadget Zone, an electronics store](design-library/shots/gadget-zone.webp) |
 
 ## How a site gets made
