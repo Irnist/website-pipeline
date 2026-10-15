@@ -697,7 +697,7 @@ async function motionChecks() {
 // ------------------------------------------------------------------ jumps to a section (L-081)
 // Run straight after a first-visit load (session storage cleared, so an intro curtain plays): jump with one
 // scrollTo to each heading below the first screen, as an anchor link, a restored scroll or a fast flick does,
-// and require it to show within 2.5s. the music shop sample's count-in heading stayed masked for good: its reveal was checked
+// and require it to show within 2.5s. The music shop sample's count-in heading stayed masked for good: its reveal was checked
 // only on scroll updates, and the jump's update came while the intro still held every reveal back.
 // Serialised into the page; must be self-contained.
 async function jumpChecks() {

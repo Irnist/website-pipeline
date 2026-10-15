@@ -105,7 +105,7 @@ BARE_EXPECT = [
     (r"selftest-bare\.html: empty meta description", "meta description"),
 ]
 OTHER_EXPECT = [
-    (r"audio-devices\.html: <html> has no lang", "html lang"),
+    (r"\.html: <html> has no lang", "html lang"),
     (r"index\.html: JSON-LD doesn't parse", "JSON-LD parses"),
     (r"same <title> on", "unique titles"),
     (r"robots\.txt blocks the whole site", "robots.txt"),
@@ -167,7 +167,7 @@ def plant(site):
     cfg = runpy.run_path(str(site / "_src" / "site_config.py"))
     cta_href = cfg["PRIMARY_CTA"][1]
     pages = sorted(p.name for p in dist.glob("*.html"))
-    qa_page = next(p for p in pages if p not in ("index.html", "404.html", "contact.html", "audio-devices.html"))
+    qa_page = next(p for p in pages if p not in ("index.html", "404.html", "contact.html"))
     edit(dist / qa_page, "</main>", QA_MARKUP.format(cta_href=cta_href) + "</main>")
     edit(dist / qa_page, "</head>", '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter">'
                                     "</head>")
@@ -188,7 +188,7 @@ def plant(site):
     brief.write_text(re.sub(r"^Links.*$", "", text, flags=re.M) + "\nLinks: https://instagram.com/selftestbrief\n",
                      encoding="utf-8")
     edit(dist / qa_page, "</main>", '<a href="https://www.instagram.com/selftestbreif/">Instagram</a></main>')
-    edit(dist / "audio-devices.html" if "audio-devices.html" in pages else dist / other, '<html lang="en">', "<html>")
+    edit(dist / other, '<html lang="en">', "<html>")
     edit(dist / "index.html", 'type="application/ld+json">', 'type="application/ld+json">{,')
     title = re.search(r"<title>(.*?)</title>", home, re.S).group(0)
     edit(dist / "404.html", re.search(r"<title>.*?</title>", (dist / "404.html").read_text(encoding="utf-8"),
