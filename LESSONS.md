@@ -27,6 +27,14 @@ Entry format:
 
 ---
 
+### L-082 · 2026-10-16 · Booking Widget · tooling
+- Mistake: after the deploy that added the Custom theme, the user said the background colour picker did nothing ("the preview box doesn't change"). Their browser paired the new demo page with the old `widget.js`, which didn't know the `background` attribute. The background picker also listened only for `input`, so a picker that fires only `change` on close did nothing either.
+- Caught by: user
+- Root cause: `widget.js` was served with `max-age=300, stale-while-revalidate=86400`, while the page and `demo.js` revalidated on every load. A script that a page depends on was allowed to lag a day behind it. The `change`-only path was never tested; the e2e only typed in the hex field.
+- Prevention: a script whose features the page depends on must revalidate as often as the page (`max-age=0, must-revalidate`), or be loaded by a versioned URL that changes with it. When the cache rule changes, also change the URL once (`?v=2`), because copies already cached keep the old rule. A colour input listens to both `input` and `change`.
+- Enforced by: check (Booking Widget `test/e2e.mjs`: widget.js must revalidate and not use stale-while-revalidate; both pickers must work from `change` alone) + rule (RULES.md › Process & tooling, the long-cached file line)
+- Seen: Booking Widget (same family as L-037)
+
 Entries L-003 to L-016 were mined on 2026-10-07 from the impeccable critiques of IronCity (2026-10-06, 28/40) and Weknz (2026-10-06, 23/36). New checks were proven against planted defects, a clean template build, and copies of both shipped sites.
 
 ### L-081 · 2026-10-13 · Music shop sample · motion
